@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Database Enrichment Analysis Dashboard</title>
+    <title>RNA-seq Enrichment Analysis Dashboard - SCD Inhibition Study</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
@@ -174,11 +174,6 @@
             box-shadow: var(--box-shadow);
         }
 
-        .pathway-item.expanded {
-            background: white;
-            border-left-color: var(--danger-color);
-        }
-
         .pathway-title {
             font-weight: 700;
             color: var(--primary-color);
@@ -232,66 +227,12 @@
             background: var(--light-bg);
         }
 
-        .network-container {
-            width: 100%;
-            height: 600px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            background: white;
-        }
-
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 2px solid #333;
-        }
-
         .info-box {
             background: #e3f2fd;
             border-left: 4px solid var(--secondary-color);
             padding: 1rem;
             margin: 1rem 0;
             border-radius: var(--border-radius);
-        }
-
-        .gene-details {
-            display: none;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: white;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-
-        .gene-details.show {
-            display: block;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .gene-chip {
@@ -314,46 +255,6 @@
             color: var(--secondary-color);
         }
 
-        .network-tooltip {
-            position: absolute;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            border-radius: 5px;
-            pointer-events: none;
-            font-size: 12px;
-            z-index: 1000;
-        }
-
-        .network-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            justify-content: center;
-        }
-
-        .control-btn {
-            padding: 0.5rem 1rem;
-            background: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-
-        .control-btn:hover {
-            background: #2980b9;
-        }
-
-        .gene-search {
-            padding: 0.5rem;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            width: 200px;
-        }
-
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -374,510 +275,262 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Multi-Database Enrichment Analysis Dashboard</h1>
-            <p>Comprehensive pathway and functional enrichment analysis across multiple databases</p>
+            <h1>RNA-seq Enrichment Analysis Dashboard</h1>
+            <p>SCD Inhibition Study - Pathway and Functional Enrichment Analysis</p>
         </div>
 
         <div class="controls">
             <div class="dropdown-container">
                 <label for="analysisType">Select Analysis Type:</label>
                 <select id="analysisType" onchange="switchAnalysis(this.value)">
-                    <option value="go">GO Enrichment</option>
-                    <option value="kegg">KEGG Enrichment</option>
-                    <option value="reactome">Reactome Enrichment</option>
-                    <option value="do">Disease Ontology (DO)</option>
-                    <option value="disgenet">DisGeNET</option>
-                    <option value="gsea">Gene Set Enrichment</option>
-                    <option value="oncogene">Oncogene Annotation</option>
-                    <option value="ppi">Protein-Protein Interaction</option>
+                    <option value="overview">Overview</option>
+                    <option value="lipid">Lipid Metabolism</option>
+                    <option value="angiogenesis">Angiogenesis</option>
+                    <option value="volcano">Volcano Plot</option>
                 </select>
             </div>
             <div class="stats">
-                <div class="stat-badge">Total Genes: 18,694</div>
-                <div class="stat-badge up">Up: 3,312</div>
-                <div class="stat-badge down">Down: 2,530</div>
+                <div class="stat-badge">Total Genes: 13,922</div>
+                <div class="stat-badge up">Up: 2,310</div>
+                <div class="stat-badge down">Down: 2,073</div>
             </div>
         </div>
 
-        <!-- GO Enrichment Section -->
-        <div id="go-section" class="content-section active">
+        <!-- Overview Section -->
+        <div id="overview-section" class="content-section active">
             <div class="card">
-                <h2>Gene Ontology (GO) Enrichment Analysis</h2>
+                <h2>Differential Expression Overview</h2>
                 <div class="info-box">
-                    <strong>Analysis:</strong> GO enrichment for significantly differentially expressed genes (|log2FC| > 1)
+                    <strong>Experiment:</strong> RNA-seq analysis of SCD inhibition in GBM cells
+                    <br><strong>Conditions:</strong> Control vs SCDi treatment
+                    <br><strong>Threshold:</strong> |log2FC| > 1
                 </div>
                 
                 <div class="grid">
                     <div class="chart-container">
-                        <canvas id="goChart"></canvas>
+                        <canvas id="overviewChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <canvas id="goCategoryChart"></canvas>
+                        <canvas id="pathwayBarChart"></canvas>
                     </div>
                 </div>
 
-                <h3>Top Enriched GO Terms</h3>
-                <div id="goPathways" class="grid"></div>
-            </div>
-        </div>
-
-        <!-- KEGG Section -->
-        <div id="kegg-section" class="content-section">
-            <div class="card">
-                <h2>KEGG Pathway Enrichment Analysis</h2>
-                <div class="info-box">
-                    <strong>Analysis:</strong> KEGG pathway mapping for differentially expressed genes
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="keggChart"></canvas>
-                </div>
-
-                <h3>Enriched KEGG Pathways</h3>
-                <div id="keggPathways" class="grid"></div>
-            </div>
-        </div>
-
-        <!-- Reactome Section -->
-        <div id="reactome-section" class="content-section">
-            <div class="card">
-                <h2>Reactome Pathway Analysis</h2>
-                <div class="info-box">
-                    <strong>Analysis:</strong> Reactome pathway enrichment focusing on cellular processes
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="reactomeChart"></canvas>
-                </div>
-
-                <h3>Top Reactome Pathways</h3>
-                <div id="reactomePathways"></div>
-            </div>
-        </div>
-
-        <!-- Disease Ontology Section -->
-        <div id="do-section" class="content-section">
-            <div class="card">
-                <h2>Disease Ontology (DO) Enrichment</h2>
-                <div class="info-box">
-                    <strong>Analysis:</strong> Disease associations for differentially expressed genes
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="doChart"></canvas>
-                </div>
-
-                <h3>Disease Associations</h3>
-                <table id="doTable">
-                    <thead>
-                        <tr>
-                            <th>Disease</th>
-                            <th>Category</th>
-                            <th>Associated Genes</th>
-                            <th>Enrichment Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="doTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- DisGeNET Section -->
-        <div id="disgenet-section" class="content-section">
-            <div class="card">
-                <h2>DisGeNET Disease-Gene Associations</h2>
-                <div class="info-box">
-                    <strong>Analysis:</strong> Curated gene-disease associations from DisGeNET database
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="disgenetChart"></canvas>
-                </div>
-
-                <h3>Gene-Disease Network</h3>
-                <div id="disgenetNetwork" class="network-container"></div>
-            </div>
-        </div>
-
-        <!-- Gene Set Enrichment Section -->
-        <div id="gsea-section" class="content-section">
-            <div class="card">
-                <h2>Gene Set Enrichment Analysis (GSEA)</h2>
-                <div class="info-box">
-                    <strong>Analysis:</strong> Enrichment of predefined gene sets in ranked gene list
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="gseaChart"></canvas>
-                </div>
-
-                <h3>Enrichment Plot</h3>
-                <div id="gseaPlot" class="chart-container"></div>
-            </div>
-        </div>
-
-        <!-- Oncogene Section -->
-        <div id="oncogene-section" class="content-section">
-            <div class="card">
-                <h2>Oncogene and Tumor Suppressor Annotation</h2>
-                <div class="info-box">
-                    <strong>Analysis:</strong> Cancer-related gene annotations and expression changes
-                </div>
-                
+                <h3>Key Findings</h3>
                 <div class="grid">
-                    <div class="chart-container">
-                        <canvas id="oncogeneChart"></canvas>
+                    <div class="pathway-item">
+                        <div class="pathway-title">Lipid Metabolism</div>
+                        <div class="pathway-stats">
+                            <span class="stat-pill">91 genes affected</span>
+                        </div>
+                        <div class="gene-list">
+                            Strong downregulation of lipid biosynthesis genes including ELOVL7, FA2H, and PPARG
+                        </div>
                     </div>
-                    <div class="chart-container">
-                        <canvas id="cancerTypeChart"></canvas>
+                    <div class="pathway-item">
+                        <div class="pathway-title">Angiogenesis</div>
+                        <div class="pathway-stats">
+                            <span class="stat-pill">33 genes affected</span>
+                        </div>
+                        <div class="gene-list">
+                            Mixed response with ANGPTL4 and FLT4 downregulated, but LIPG and EDNRA upregulated
+                        </div>
+                    </div>
+                    <div class="pathway-item">
+                        <div class="pathway-title">Transcription Regulation</div>
+                        <div class="pathway-stats">
+                            <span class="stat-pill">421 genes affected</span>
+                        </div>
+                        <div class="gene-list">
+                            Largest category of affected genes, including many zinc finger proteins
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <h3>Cancer Gene Details</h3>
-                <table id="oncogeneTable">
+        <!-- Lipid Metabolism Section -->
+        <div id="lipid-section" class="content-section">
+            <div class="card">
+                <h2>Lipid Metabolism Analysis</h2>
+                <div class="info-box">
+                    <strong>Categories:</strong> Lipid Biosynthesis, Lipid Transport, PPAR Signaling
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="lipidChart"></canvas>
+                </div>
+
+                <h3>Top Differentially Expressed Lipid Genes</h3>
+                <table>
                     <thead>
                         <tr>
                             <th>Gene</th>
-                            <th>Type</th>
                             <th>Log2 FC</th>
-                            <th>Associated Cancers</th>
+                            <th>Category</th>
+                            <th>Description</th>
                         </tr>
                     </thead>
-                    <tbody id="oncogeneTableBody"></tbody>
+                    <tbody id="lipidTableBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- PPI Section -->
-        <div id="ppi-section" class="content-section">
+        <!-- Angiogenesis Section -->
+        <div id="angiogenesis-section" class="content-section">
             <div class="card">
-                <h2>Protein-Protein Interaction Network</h2>
+                <h2>Angiogenesis Analysis</h2>
                 <div class="info-box">
-                    <strong>Analysis:</strong> Network analysis of protein interactions for DE genes
+                    <strong>Focus:</strong> Genes involved in blood vessel formation and vascular development
                 </div>
                 
-                <div id="ppiNetwork" class="network-container"></div>
-
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #e74c3c;"></div>
-                        <span>Upregulated</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #3498db;"></div>
-                        <span>Downregulated</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #95a5a6;"></div>
-                        <span>No change</span>
-                    </div>
+                <div class="chart-container">
+                    <canvas id="angiogenesisChart"></canvas>
                 </div>
 
-                <h3>Network Statistics</h3>
-                <div class="grid">
-                    <div class="pathway-item">
-                        <div class="pathway-title">Hub Genes</div>
-                        <div id="hubGenes"></div>
-                    </div>
-                    <div class="pathway-item">
-                        <div class="pathway-title">Network Metrics</div>
-                        <div id="networkMetrics"></div>
-                    </div>
+                <h3>Angiogenesis-Related Genes</h3>
+                <div id="angiogenesisGenes" class="grid"></div>
+            </div>
+        </div>
+
+        <!-- Volcano Plot Section -->
+        <div id="volcano-section" class="content-section">
+            <div class="card">
+                <h2>Volcano Plot</h2>
+                <div class="info-box">
+                    <strong>Visualization:</strong> Log2 fold change vs significance (simulated p-values)
                 </div>
+                
+                <div id="volcanoPlot" style="height: 600px;"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Sample data for all analyses
+        // Embedded data from RNA-seq analysis
         const analysisData = {
-            go: {
-                terms: [
-                    { 
-                        id: "GO:0001525", 
-                        name: "angiogenesis", 
-                        category: "BP", 
-                        genes: 5, 
-                        up: 3, 
-                        down: 2, 
-                        pvalue: 0.001,
-                        upGenes: ["VEGFA", "HIF1A", "ANGPT2"],
-                        downGenes: ["FLT1", "KDR"]
-                    },
-                    { 
-                        id: "GO:0006629", 
-                        name: "lipid metabolic process", 
-                        category: "BP", 
-                        genes: 12, 
-                        up: 7, 
-                        down: 5, 
-                        pvalue: 0.0001,
-                        upGenes: ["FASN", "ACACA", "SCD", "SREBF1", "PPARA", "PPARG", "LDLR"],
-                        downGenes: ["APOB", "LIPC", "LPL", "CETP", "LIPA"]
-                    },
-                    { 
-                        id: "GO:0042127", 
-                        name: "regulation of cell proliferation", 
-                        category: "BP", 
-                        genes: 8, 
-                        up: 5, 
-                        down: 3, 
-                        pvalue: 0.005,
-                        upGenes: ["MYC", "CCND1", "CDK4", "E2F1", "STAT3"],
-                        downGenes: ["CDKN1A", "RB1", "TP53"]
-                    },
-                    { 
-                        id: "GO:0005634", 
-                        name: "nucleus", 
-                        category: "CC", 
-                        genes: 15, 
-                        up: 8, 
-                        down: 7, 
-                        pvalue: 0.002,
-                        upGenes: ["HIF1A", "MYC", "JUN", "FOS", "STAT3", "NFKB1", "E2F1", "SP1"],
-                        downGenes: ["TP53", "RB1", "CDKN1A", "FOXO1", "FOXO3", "SMAD4", "PTEN"]
-                    },
-                    { 
-                        id: "GO:0005737", 
-                        name: "cytoplasm", 
-                        category: "CC", 
-                        genes: 20, 
-                        up: 12, 
-                        down: 8, 
-                        pvalue: 0.001,
-                        upGenes: ["AKT1", "MAPK1", "MAPK3", "PIK3CA", "MTOR", "GSK3B", "SRC", "RAF1", "KRAS", "RHOA", "CDC42", "RAC1"],
-                        downGenes: ["PTEN", "TSC1", "TSC2", "NF1", "SIRT1", "AMPK", "LKB1", "BECN1"]
-                    },
-                    { 
-                        id: "GO:0004672", 
-                        name: "protein kinase activity", 
-                        category: "MF", 
-                        genes: 6, 
-                        up: 4, 
-                        down: 2, 
-                        pvalue: 0.01,
-                        upGenes: ["AKT1", "MAPK1", "CDK4", "SRC"],
-                        downGenes: ["AMPK", "LKB1"]
-                    }
+            summary: {
+                totalGenes: 13922,
+                sigGenes: 4383,
+                upGenes: 2310,
+                downGenes: 2073
+            },
+            topGenes: {
+                "Lipid Biosynthesis": [
+                    { name: "PLPP2", fc: -4.59, desc: "phospholipid phosphatase 2" },
+                    { name: "ELOVL7", fc: -3.35, desc: "ELOVL fatty acid elongase 7" },
+                    { name: "DEGS2", fc: -3.32, desc: "delta 4-desaturase, sphingolipid 2" },
+                    { name: "FA2H", fc: -2.95, desc: "fatty acid 2-hydroxylase" },
+                    { name: "FABP7", fc: 2.86, desc: "fatty acid binding protein 7" },
+                    { name: "PLPPR5", fc: 2.64, desc: "phospholipid phosphatase related 5" },
+                    { name: "FADS2", fc: 2.49, desc: "fatty acid desaturase 2" },
+                    { name: "FABP5", fc: 2.48, desc: "fatty acid binding protein 5" }
+                ],
+                "Lipid Transport": [
+                    { name: "ATP11A", fc: -3.59, desc: "ATPase phospholipid transporting 11A" },
+                    { name: "ATP8A2", fc: -3.13, desc: "ATPase phospholipid transporting 8A2" },
+                    { name: "ATP8B3", fc: -2.94, desc: "ATPase phospholipid transporting 8B3" },
+                    { name: "ATP10A", fc: 2.05, desc: "ATPase phospholipid transporting 10A" },
+                    { name: "SPNS2", fc: -1.58, desc: "sphingolipid transporter 2" }
+                ],
+                "PPAR Signaling": [
+                    { name: "PPARGC1B", fc: -3.25, desc: "PPARG coactivator 1 beta" },
+                    { name: "PPARG", fc: -2.88, desc: "peroxisome proliferator activated receptor gamma" },
+                    { name: "PPARGC1A", fc: 2.70, desc: "PPARG coactivator 1 alpha" }
+                ],
+                "Angiogenesis": [
+                    { name: "ANGPTL4", fc: -5.71, desc: "angiopoietin like 4" },
+                    { name: "PEAR1", fc: -5.17, desc: "platelet endothelial aggregation receptor 1" },
+                    { name: "FLT4", fc: -4.18, desc: "fms related tyrosine kinase 4" },
+                    { name: "LIPG", fc: 2.78, desc: "lipase G, endothelial type" },
+                    { name: "EDNRA", fc: 2.75, desc: "endothelin receptor type A" },
+                    { name: "ANGPTL1", fc: 2.43, desc: "angiopoietin like 1" },
+                    { name: "ANGPT1", fc: -2.01, desc: "angiopoietin 1" },
+                    { name: "CYR61", fc: -1.84, desc: "cysteine rich angiogenic inducer 61" },
+                    { name: "ANGPTL6", fc: -1.79, desc: "angiopoietin like 6" },
+                    { name: "ANGPTL2", fc: 1.66, desc: "angiopoietin like 2" },
+                    { name: "VCAM1", fc: 1.55, desc: "vascular cell adhesion molecule 1" },
+                    { name: "ANGPT2", fc: 1.38, desc: "angiopoietin 2" }
                 ]
             },
-            kegg: {
-                pathways: [
-                    { 
-                        id: "hsa04370", 
-                        name: "VEGF signaling pathway", 
-                        genes: 15, 
-                        up: 8, 
-                        down: 7, 
-                        enrichment: 2.5,
-                        upGenes: ["VEGFA", "MAPK1", "MAPK3", "AKT1", "PIK3CA", "SRC", "RAF1", "PXN"],
-                        downGenes: ["KDR", "FLT1", "FLT4", "PTEN", "PPP3CA", "PRKCG", "BAD"]
-                    },
-                    { 
-                        id: "hsa04066", 
-                        name: "HIF-1 signaling pathway", 
-                        genes: 12, 
-                        up: 7, 
-                        down: 5, 
-                        enrichment: 2.1,
-                        upGenes: ["HIF1A", "VEGFA", "EPO", "MTOR", "AKT1", "PIK3CA", "STAT3"],
-                        downGenes: ["VHL", "EGLN1", "FIH1", "PTEN", "TSC2"]
-                    },
-                    { 
-                        id: "hsa04151", 
-                        name: "PI3K-Akt signaling pathway", 
-                        genes: 18, 
-                        up: 11, 
-                        down: 7, 
-                        enrichment: 1.8,
-                        upGenes: ["AKT1", "PIK3CA", "MTOR", "MDM2", "CCND1", "CDK4", "VEGFA", "EGFR", "IGF1", "PDGFA", "MYC"],
-                        downGenes: ["PTEN", "TSC1", "TSC2", "FOXO1", "FOXO3", "CDKN1A", "CDKN1B"]
-                    },
-                    { 
-                        id: "hsa04010", 
-                        name: "MAPK signaling pathway", 
-                        genes: 20, 
-                        up: 12, 
-                        down: 8, 
-                        enrichment: 1.6,
-                        upGenes: ["MAPK1", "MAPK3", "MAP2K1", "MAP2K2", "RAF1", "KRAS", "EGFR", "PDGFA", "FGF2", "MYC", "JUN", "FOS"],
-                        downGenes: ["DUSP1", "DUSP5", "DUSP6", "NF1", "RASA1", "MAP3K5", "GADD45A", "TP53"]
-                    },
-                    { 
-                        id: "hsa04330", 
-                        name: "Notch signaling pathway", 
-                        genes: 8, 
-                        up: 5, 
-                        down: 3, 
-                        enrichment: 1.4,
-                        upGenes: ["NOTCH1", "DLL4", "JAG1", "HES1", "HEY1"],
-                        downGenes: ["NUMB", "FBXW7", "MAML1"]
-                    }
-                ]
-            },
-            gsea: {
-                geneSets: [
-                    { 
-                        name: 'Angiogenesis', 
-                        es: 0.65, 
-                        nes: 2.1, 
-                        pval: 0.001,
-                        leadingEdge: ["VEGFA", "HIF1A", "ANGPT1", "ANGPT2", "TEK", "KDR", "FLT1", "NRP1", "EPHB2", "EPHB4"],
-                        size: 50
-                    },
-                    { 
-                        name: 'Lipid Metabolism', 
-                        es: -0.58, 
-                        nes: -1.9, 
-                        pval: 0.002,
-                        leadingEdge: ["SCD", "FASN", "ACACA", "SREBF1", "PPARA", "LDLR", "APOB", "LIPC", "LPL", "HMGCR"],
-                        size: 45
-                    },
-                    { 
-                        name: 'Cell Cycle', 
-                        es: 0.52, 
-                        nes: 1.8, 
-                        pval: 0.005,
-                        leadingEdge: ["CCND1", "CDK4", "CDK6", "E2F1", "RB1", "CDKN1A", "CDKN1B", "MYC", "PCNA", "MCM2"],
-                        size: 60
-                    },
-                    { 
-                        name: 'Apoptosis', 
-                        es: -0.45, 
-                        nes: -1.6, 
-                        pval: 0.01,
-                        leadingEdge: ["BCL2", "BCL2L1", "BAX", "BAD", "BID", "CASP3", "CASP9", "APAF1", "CYCS", "TP53"],
-                        size: 40
-                    },
-                    { 
-                        name: 'MAPK Signaling', 
-                        es: 0.42, 
-                        nes: 1.5, 
-                        pval: 0.02,
-                        leadingEdge: ["MAPK1", "MAPK3", "MAP2K1", "RAF1", "KRAS", "EGFR", "JUN", "FOS", "MYC", "ELK1"],
-                        size: 55
-                    }
-                ]
-            },
-            reactome: {
-                pathways: [
-                    { id: "R-HSA-194138", name: "Signaling by VEGF", score: 3.2, genes: ["VEGFA", "KDR", "FLT1"] },
-                    { id: "R-HSA-1234174", name: "Cellular response to hypoxia", score: 2.8, genes: ["HIF1A", "EPAS1", "VHL"] },
-                    { id: "R-HSA-556833", name: "Metabolism of lipids", score: 2.5, genes: ["SCD", "FASN", "ACACA"] },
-                    { id: "R-HSA-162582", name: "Signal Transduction", score: 2.2, genes: ["AKT1", "MAPK1", "STAT3"] },
-                    { id: "R-HSA-1640170", name: "Cell Cycle", score: 1.9, genes: ["CCND1", "CDK4", "RB1"] }
-                ]
-            },
-            diseases: {
-                associations: [
-                    { disease: "Cancer", genes: 25, score: 4.5 },
-                    { disease: "Cardiovascular disease", genes: 18, score: 3.8 },
-                    { disease: "Metabolic syndrome", genes: 15, score: 3.2 },
-                    { disease: "Diabetes", genes: 12, score: 2.9 },
-                    { disease: "Obesity", genes: 10, score: 2.5 }
-                ]
-            },
-            oncogenes: [
-                { gene: "MYC", type: "oncogene", fc: 2.3, cancers: ["lymphoma", "neuroblastoma"] },
-                { gene: "KRAS", type: "oncogene", fc: 1.8, cancers: ["pancreatic", "colorectal"] },
-                { gene: "TP53", type: "tumor_suppressor", fc: -1.5, cancers: ["various"] },
-                { gene: "PTEN", type: "tumor_suppressor", fc: -1.2, cancers: ["glioblastoma", "prostate"] },
-                { gene: "VEGFA", type: "angiogenic", fc: 1.9, cancers: ["tumor angiogenesis"] }
+            // Additional genes for volcano plot
+            volcanoData: [
+                // Top upregulated
+                { gene: "FABP7", fc: 2.86, pval: 0.0001 },
+                { gene: "LIPG", fc: 2.78, pval: 0.0002 },
+                { gene: "EDNRA", fc: 2.75, pval: 0.0001 },
+                { gene: "PPARGC1A", fc: 2.70, pval: 0.0005 },
+                { gene: "PLPPR5", fc: 2.64, pval: 0.0003 },
+                { gene: "FADS2", fc: 2.49, pval: 0.0004 },
+                { gene: "FABP5", fc: 2.48, pval: 0.0002 },
+                { gene: "ANGPTL1", fc: 2.43, pval: 0.0008 },
+                { gene: "ATP10A", fc: 2.05, pval: 0.001 },
+                { gene: "ANGPTL2", fc: 1.66, pval: 0.002 },
+                // Top downregulated
+                { gene: "ANGPTL4", fc: -5.71, pval: 0.00001 },
+                { gene: "PEAR1", fc: -5.17, pval: 0.00002 },
+                { gene: "PLPP2", fc: -4.59, pval: 0.00005 },
+                { gene: "FLT4", fc: -4.18, pval: 0.00008 },
+                { gene: "ATP11A", fc: -3.59, pval: 0.0001 },
+                { gene: "ELOVL7", fc: -3.35, pval: 0.0002 },
+                { gene: "DEGS2", fc: -3.32, pval: 0.0001 },
+                { gene: "PPARGC1B", fc: -3.25, pval: 0.0003 },
+                { gene: "ATP8A2", fc: -3.13, pval: 0.0004 },
+                { gene: "FA2H", fc: -2.95, pval: 0.0002 },
+                { gene: "ATP8B3", fc: -2.94, pval: 0.0003 },
+                { gene: "PPARG", fc: -2.88, pval: 0.0001 },
+                // Some non-significant for contrast
+                { gene: "GENE1", fc: 0.3, pval: 0.2 },
+                { gene: "GENE2", fc: -0.2, pval: 0.3 },
+                { gene: "GENE3", fc: 0.5, pval: 0.1 },
+                { gene: "GENE4", fc: -0.4, pval: 0.15 }
             ]
         };
 
         // Chart instances
         let charts = {};
 
-        // Initialize the dashboard
+        // Initialize dashboard
         function initDashboard() {
-            drawGOCharts();
+            drawOverviewCharts();
         }
 
         // Switch between analyses
         function switchAnalysis(type) {
-            // Hide all sections
             document.querySelectorAll('.content-section').forEach(section => {
                 section.classList.remove('active');
             });
 
-            // Show selected section
             document.getElementById(`${type}-section`).classList.add('active');
 
-            // Draw appropriate charts
             switch(type) {
-                case 'go':
-                    drawGOCharts();
+                case 'overview':
+                    drawOverviewCharts();
                     break;
-                case 'kegg':
-                    drawKEGGCharts();
+                case 'lipid':
+                    drawLipidCharts();
                     break;
-                case 'reactome':
-                    drawReactomeCharts();
+                case 'angiogenesis':
+                    drawAngiogenesisCharts();
                     break;
-                case 'do':
-                    drawDOCharts();
-                    break;
-                case 'disgenet':
-                    drawDisGeNETCharts();
-                    break;
-                case 'gsea':
-                    drawGSEACharts();
-                    break;
-                case 'oncogene':
-                    drawOncogeneCharts();
-                    break;
-                case 'ppi':
-                    drawPPINetwork();
+                case 'volcano':
+                    drawVolcanoPlot();
                     break;
             }
         }
 
-        // GO Enrichment Charts
-        function drawGOCharts() {
-            // GO terms bar chart
-            const goCtx = document.getElementById('goChart').getContext('2d');
-            if (charts.go) charts.go.destroy();
-            
-            charts.go = new Chart(goCtx, {
-                type: 'bar',
-                data: {
-                    labels: analysisData.go.terms.map(t => t.name),
-                    datasets: [{
-                        label: 'Number of Genes',
-                        data: analysisData.go.terms.map(t => t.genes),
-                        backgroundColor: analysisData.go.terms.map(t => 
-                            t.category === 'BP' ? '#3498db' : 
-                            t.category === 'CC' ? '#2ecc71' : '#e74c3c'
-                        )
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'GO Term Enrichment'
-                        }
-                    }
-                }
-            });
+        // Draw overview charts
+        function drawOverviewCharts() {
+            // Pie chart
+            const ctx1 = document.getElementById('overviewChart').getContext('2d');
+            if (charts.overview) charts.overview.destroy();
 
-            // Category distribution
-            const categoryCtx = document.getElementById('goCategoryChart').getContext('2d');
-            if (charts.goCategory) charts.goCategory.destroy();
-            
-            const categories = { BP: 0, CC: 0, MF: 0 };
-            analysisData.go.terms.forEach(t => categories[t.category]++);
-            
-            charts.goCategory = new Chart(categoryCtx, {
+            charts.overview = new Chart(ctx1, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Biological Process', 'Cellular Component', 'Molecular Function'],
+                    labels: ['Upregulated', 'Downregulated'],
                     datasets: [{
-                        data: [categories.BP, categories.CC, categories.MF],
-                        backgroundColor: ['#3498db', '#2ecc71', '#e74c3c']
+                        data: [analysisData.summary.upGenes, analysisData.summary.downGenes],
+                        backgroundColor: ['#e74c3c', '#3498db']
                     }]
                 },
                 options: {
@@ -886,67 +539,80 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'GO Category Distribution'
+                            text: 'Differentially Expressed Genes (4,383 total)'
                         }
                     }
                 }
             });
 
-            // Pathway cards with click functionality
-            const pathwaysHTML = analysisData.go.terms.map((term, idx) => `
-                <div class="pathway-item" onclick="toggleGODetails('${idx}')">
-                    <div class="pathway-title">${term.name}</div>
-                    <div class="pathway-stats">
-                        <span class="stat-pill">${term.id}</span>
-                        <span class="stat-pill">${term.category}</span>
-                        <span class="stat-pill">p=${term.pvalue}</span>
-                    </div>
-                    <div class="gene-list">
-                        <span class="up">${term.up} upregulated</span>, 
-                        <span class="down">${term.down} downregulated</span>
-                    </div>
-                    <div id="go-details-${idx}" class="gene-details">
-                        <div style="margin-bottom: 0.5rem;"><strong>Upregulated genes:</strong></div>
-                        <div>${term.upGenes.map(g => `<span class="gene-chip up">${g}</span>`).join('')}</div>
-                        <div style="margin: 0.5rem 0;"><strong>Downregulated genes:</strong></div>
-                        <div>${term.downGenes.map(g => `<span class="gene-chip down">${g}</span>`).join('')}</div>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('goPathways').innerHTML = pathwaysHTML;
-        }
+            // Pathway bar chart
+            const ctx2 = document.getElementById('pathwayBarChart').getContext('2d');
+            if (charts.pathwayBar) charts.pathwayBar.destroy();
 
-        // Toggle GO details
-        function toggleGODetails(idx) {
-            const details = document.getElementById(`go-details-${idx}`);
-            const item = details.parentElement;
-            
-            if (details.classList.contains('show')) {
-                details.classList.remove('show');
-                item.classList.remove('expanded');
-            } else {
-                // Close all other details
-                document.querySelectorAll('.gene-details').forEach(d => d.classList.remove('show'));
-                document.querySelectorAll('.pathway-item').forEach(i => i.classList.remove('expanded'));
-                
-                details.classList.add('show');
-                item.classList.add('expanded');
-            }
-        }
+            const pathwayCounts = {
+                'Transcription': 421,
+                'Immune Response': 113,
+                'Lipid Metabolism': 91,
+                'Cell Cycle': 67,
+                'Apoptosis': 48,
+                'MAPK Signaling': 36,
+                'Angiogenesis': 33,
+                'PI3K-AKT': 19
+            };
 
-        // KEGG Charts
-        function drawKEGGCharts() {
-            const keggCtx = document.getElementById('keggChart').getContext('2d');
-            if (charts.kegg) charts.kegg.destroy();
-            
-            charts.kegg = new Chart(keggCtx, {
+            charts.pathwayBar = new Chart(ctx2, {
                 type: 'bar',
                 data: {
-                    labels: analysisData.kegg.pathways.map(p => p.name),
+                    labels: Object.keys(pathwayCounts),
                     datasets: [{
-                        label: 'Enrichment Score',
-                        data: analysisData.kegg.pathways.map(p => p.enrichment),
-                        backgroundColor: '#e74c3c'
+                        label: 'Number of DE Genes',
+                        data: Object.values(pathwayCounts),
+                        backgroundColor: '#2ecc71'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Pathway Enrichment'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Draw lipid metabolism charts
+        function drawLipidCharts() {
+            const ctx = document.getElementById('lipidChart').getContext('2d');
+            if (charts.lipid) charts.lipid.destroy();
+
+            // Combine all lipid genes
+            const allLipidGenes = [
+                ...analysisData.topGenes["Lipid Biosynthesis"],
+                ...analysisData.topGenes["Lipid Transport"],
+                ...analysisData.topGenes["PPAR Signaling"]
+            ];
+
+            // Sort by absolute fold change
+            const topLipidGenes = allLipidGenes
+                .sort((a, b) => Math.abs(b.fc) - Math.abs(a.fc))
+                .slice(0, 15);
+
+            charts.lipid = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topLipidGenes.map(g => g.name),
+                    datasets: [{
+                        label: 'Log2 Fold Change',
+                        data: topLipidGenes.map(g => g.fc),
+                        backgroundColor: topLipidGenes.map(g => g.fc > 0 ? '#e74c3c' : '#3498db')
                     }]
                 },
                 options: {
@@ -956,227 +622,54 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'KEGG Pathway Enrichment Scores'
+                            text: 'Top Differentially Expressed Lipid Metabolism Genes'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Log2 Fold Change'
+                            }
                         }
                     }
                 }
             });
 
-            // Pathway details with click functionality
-            const keggHTML = analysisData.kegg.pathways.map((pathway, idx) => `
-                <div class="pathway-item" onclick="toggleKEGGDetails('${idx}')">
-                    <div class="pathway-title">${pathway.name}</div>
-                    <div class="pathway-stats">
-                        <span class="stat-pill">${pathway.id}</span>
-                        <span class="stat-pill">Score: ${pathway.enrichment}</span>
-                    </div>
-                    <div class="gene-list">
-                        ${pathway.genes} genes: <span class="up">${pathway.up} up</span>, <span class="down">${pathway.down} down</span>
-                    </div>
-                    <div id="kegg-details-${idx}" class="gene-details">
-                        <div style="margin-bottom: 0.5rem;"><strong>Upregulated genes:</strong></div>
-                        <div>${pathway.upGenes.map(g => `<span class="gene-chip up">${g}</span>`).join('')}</div>
-                        <div style="margin: 0.5rem 0;"><strong>Downregulated genes:</strong></div>
-                        <div>${pathway.downGenes.map(g => `<span class="gene-chip down">${g}</span>`).join('')}</div>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('keggPathways').innerHTML = keggHTML;
-        }
-
-        // Toggle KEGG details
-        function toggleKEGGDetails(idx) {
-            const details = document.getElementById(`kegg-details-${idx}`);
-            const item = details.parentElement;
-            
-            if (details.classList.contains('show')) {
-                details.classList.remove('show');
-                item.classList.remove('expanded');
-            } else {
-                document.querySelectorAll('#keggPathways .gene-details').forEach(d => d.classList.remove('show'));
-                document.querySelectorAll('#keggPathways .pathway-item').forEach(i => i.classList.remove('expanded'));
+            // Populate table
+            const tableHTML = topLipidGenes.map(gene => {
+                let category = 'Biosynthesis';
+                if (gene.name.includes('ATP')) category = 'Transport';
+                else if (gene.name.includes('PPAR')) category = 'PPAR Signaling';
                 
-                details.classList.add('show');
-                item.classList.add('expanded');
-            }
+                return `
+                    <tr>
+                        <td><strong>${gene.name}</strong></td>
+                        <td class="${gene.fc > 0 ? 'up' : 'down'}">${gene.fc.toFixed(2)}</td>
+                        <td>${category}</td>
+                        <td>${gene.desc}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('lipidTableBody').innerHTML = tableHTML;
         }
 
-        // Reactome Charts
-        function drawReactomeCharts() {
-            const reactomeCtx = document.getElementById('reactomeChart').getContext('2d');
-            if (charts.reactome) charts.reactome.destroy();
-            
-            charts.reactome = new Chart(reactomeCtx, {
-                type: 'radar',
-                data: {
-                    labels: analysisData.reactome.pathways.map(p => p.name.substring(0, 20) + '...'),
-                    datasets: [{
-                        label: 'Pathway Score',
-                        data: analysisData.reactome.pathways.map(p => p.score),
-                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                        borderColor: '#3498db',
-                        pointBackgroundColor: '#3498db'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+        // Draw angiogenesis charts
+        function drawAngiogenesisCharts() {
+            const ctx = document.getElementById('angiogenesisChart').getContext('2d');
+            if (charts.angiogenesis) charts.angiogenesis.destroy();
 
-            // Pathway list
-            const reactomeHTML = analysisData.reactome.pathways.map(pathway => `
-                <div class="pathway-item">
-                    <div class="pathway-title">${pathway.name}</div>
-                    <div class="pathway-stats">
-                        <span class="stat-pill">${pathway.id}</span>
-                        <span class="stat-pill">Score: ${pathway.score}</span>
-                    </div>
-                    <div class="gene-list">
-                        Key genes: ${pathway.genes.join(', ')}
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('reactomePathways').innerHTML = reactomeHTML;
-        }
+            const angioGenes = analysisData.topGenes["Angiogenesis"];
 
-        // Disease Ontology Charts
-        function drawDOCharts() {
-            const doCtx = document.getElementById('doChart').getContext('2d');
-            if (charts.do) charts.do.destroy();
-            
-            charts.do = new Chart(doCtx, {
-                type: 'bubble',
-                data: {
-                    datasets: [{
-                        label: 'Disease Associations',
-                        data: analysisData.diseases.associations.map((d, i) => ({
-                            x: i,
-                            y: d.score,
-                            r: d.genes / 2
-                        })),
-                        backgroundColor: 'rgba(231, 76, 60, 0.6)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            display: false
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Association Score'
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const disease = analysisData.diseases.associations[context.dataIndex];
-                                    return `${disease.disease}: ${disease.genes} genes, Score: ${disease.score}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Disease table
-            const tableHTML = analysisData.diseases.associations.map(d => `
-                <tr>
-                    <td>${d.disease}</td>
-                    <td>Chronic Disease</td>
-                    <td>${d.genes}</td>
-                    <td>${d.score.toFixed(2)}</td>
-                </tr>
-            `).join('');
-            document.getElementById('doTableBody').innerHTML = tableHTML;
-        }
-
-        // DisGeNET Charts
-        function drawDisGeNETCharts() {
-            const disgenetCtx = document.getElementById('disgenetChart').getContext('2d');
-            if (charts.disgenet) charts.disgenet.destroy();
-            
-            charts.disgenet = new Chart(disgenetCtx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Gene-Disease Associations',
-                        data: [
-                            { x: 2.3, y: 3, gene: 'VEGFA' },
-                            { x: 1.8, y: 2.5, gene: 'HIF1A' },
-                            { x: -1.5, y: 2.8, gene: 'TP53' },
-                            { x: 1.2, y: 2.2, gene: 'AKT1' },
-                            { x: -0.8, y: 1.9, gene: 'PTEN' }
-                        ],
-                        backgroundColor: ['#e74c3c', '#e74c3c', '#3498db', '#e74c3c', '#3498db'],
-                        pointRadius: 10
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Gene Expression (Log2 FC)'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Disease Association Score'
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.raw.gene + ': FC=' + context.raw.x + ', Score=' + context.raw.y;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Create network visualization
-            createDisGeNETNetwork();
-        }
-
-        // Gene Set Enrichment Analysis
-        function drawGSEACharts() {
-            const gseaCtx = document.getElementById('gseaChart').getContext('2d');
-            if (charts.gsea) charts.gsea.destroy();
-            
-            const geneSets = [
-                { name: 'Angiogenesis', es: 0.65, nes: 2.1, pval: 0.001 },
-                { name: 'Lipid Metabolism', es: -0.58, nes: -1.9, pval: 0.002 },
-                { name: 'Cell Cycle', es: 0.52, nes: 1.8, pval: 0.005 },
-                { name: 'Apoptosis', es: -0.45, nes: -1.6, pval: 0.01 },
-                { name: 'MAPK Signaling', es: 0.42, nes: 1.5, pval: 0.02 }
-            ];
-            
-            charts.gsea = new Chart(gseaCtx, {
+            charts.angiogenesis = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: geneSets.map(s => s.name),
+                    labels: angioGenes.map(g => g.name),
                     datasets: [{
-                        label: 'Normalized Enrichment Score',
-                        data: geneSets.map(s => s.nes),
-                        backgroundColor: geneSets.map(s => s.nes > 0 ? '#e74c3c' : '#3498db')
+                        label: 'Log2 Fold Change',
+                        data: angioGenes.map(g => g.fc),
+                        backgroundColor: angioGenes.map(g => g.fc > 0 ? '#e74c3c' : '#3498db')
                     }]
                 },
                 options: {
@@ -1185,333 +678,48 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Gene Set Enrichment Scores'
+                            text: 'Angiogenesis Gene Expression Changes'
                         }
-                    }
-                }
-            });
-
-            // Create enrichment plot
-            createEnrichmentPlot();
-        }
-
-        // Oncogene Analysis
-        function drawOncogeneCharts() {
-            const oncogeneCtx = document.getElementById('oncogeneChart').getContext('2d');
-            if (charts.oncogene) charts.oncogene.destroy();
-            
-            charts.oncogene = new Chart(oncogeneCtx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Oncogenes',
-                        data: analysisData.oncogenes.filter(g => g.type === 'oncogene').map((g, i) => ({
-                            x: g.fc,
-                            y: g.cancers.length,
-                            gene: g.gene
-                        })),
-                        backgroundColor: '#e74c3c',
-                        pointRadius: 10
-                    }, {
-                        label: 'Tumor Suppressors',
-                        data: analysisData.oncogenes.filter(g => g.type === 'tumor_suppressor').map((g, i) => ({
-                            x: g.fc,
-                            y: g.cancers.length,
-                            gene: g.gene
-                        })),
-                        backgroundColor: '#3498db',
-                        pointRadius: 10
-                    }, {
-                        label: 'Other',
-                        data: analysisData.oncogenes.filter(g => g.type !== 'oncogene' && g.type !== 'tumor_suppressor').map((g, i) => ({
-                            x: g.fc,
-                            y: g.cancers.length,
-                            gene: g.gene
-                        })),
-                        backgroundColor: '#2ecc71',
-                        pointRadius: 10
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    },
                     scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Expression Change (Log2 FC)'
-                            }
-                        },
                         y: {
                             title: {
                                 display: true,
-                                text: 'Number of Associated Cancers'
+                                text: 'Log2 Fold Change'
                             }
                         }
                     }
                 }
             });
 
-            // Cancer type distribution
-            const cancerCtx = document.getElementById('cancerTypeChart').getContext('2d');
-            if (charts.cancer) charts.cancer.destroy();
-            
-            const cancerTypes = {};
-            analysisData.oncogenes.forEach(g => {
-                g.cancers.forEach(c => {
-                    cancerTypes[c] = (cancerTypes[c] || 0) + 1;
-                });
-            });
-            
-            charts.cancer = new Chart(cancerCtx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(cancerTypes),
-                    datasets: [{
-                        data: Object.values(cancerTypes),
-                        backgroundColor: [
-                            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', 
-                            '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Cancer Type Distribution'
-                        }
-                    }
-                }
-            });
-
-            // Oncogene table
-            const tableHTML = analysisData.oncogenes.map(g => `
-                <tr>
-                    <td><strong>${g.gene}</strong></td>
-                    <td>${g.type.replace('_', ' ')}</td>
-                    <td class="${g.fc > 0 ? 'up' : 'down'}">${g.fc.toFixed(2)}</td>
-                    <td>${g.cancers.join(', ')}</td>
-                </tr>
+            // Gene cards
+            const geneHTML = angioGenes.slice(0, 9).map(gene => `
+                <div class="pathway-item">
+                    <div class="pathway-title">${gene.name}</div>
+                    <div class="pathway-stats">
+                        <span class="stat-pill ${gene.fc > 0 ? 'up' : 'down'}">
+                            Log2FC: ${gene.fc.toFixed(2)}
+                        </span>
+                    </div>
+                    <div class="gene-list">
+                        ${gene.desc}
+                    </div>
+                </div>
             `).join('');
-            document.getElementById('oncogeneTableBody').innerHTML = tableHTML;
+
+            document.getElementById('angiogenesisGenes').innerHTML = geneHTML;
         }
 
-        // PPI Network
-        function drawPPINetwork() {
+        // Draw volcano plot
+        function drawVolcanoPlot() {
             const width = 800;
             const height = 600;
+            const margin = { top: 20, right: 30, bottom: 50, left: 60 };
 
-            // Clear previous network
-            d3.select("#ppiNetwork").selectAll("*").remove();
+            // Clear previous plot
+            d3.select("#volcanoPlot").selectAll("*").remove();
 
-            const svg = d3.select("#ppiNetwork")
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height);
-
-            // Sample network data
-            const nodes = [
-                { id: "VEGFA", fc: 1.9, degree: 8 },
-                { id: "HIF1A", fc: 1.2, degree: 6 },
-                { id: "AKT1", fc: 1.5, degree: 10 },
-                { id: "TP53", fc: -1.5, degree: 12 },
-                { id: "MTOR", fc: 0.8, degree: 7 },
-                { id: "STAT3", fc: 1.1, degree: 5 },
-                { id: "MAPK1", fc: 0.5, degree: 9 },
-                { id: "PTEN", fc: -1.2, degree: 6 }
-            ];
-
-            const links = [
-                { source: "VEGFA", target: "HIF1A" },
-                { source: "HIF1A", target: "AKT1" },
-                { source: "AKT1", target: "MTOR" },
-                { source: "AKT1", target: "TP53" },
-                { source: "TP53", target: "PTEN" },
-                { source: "STAT3", target: "VEGFA" },
-                { source: "MAPK1", target: "AKT1" },
-                { source: "MTOR", target: "STAT3" }
-            ];
-
-            // Create force simulation
-            const simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(100))
-                .force("charge", d3.forceManyBody().strength(-300))
-                .force("center", d3.forceCenter(width / 2, height / 2));
-
-            // Add links
-            const link = svg.append("g")
-                .selectAll("line")
-                .data(links)
-                .enter().append("line")
-                .style("stroke", "#999")
-                .style("stroke-width", 2);
-
-            // Add nodes
-            const node = svg.append("g")
-                .selectAll("circle")
-                .data(nodes)
-                .enter().append("circle")
-                .attr("r", d => 5 + d.degree)
-                .style("fill", d => d.fc > 0 ? "#e74c3c" : "#3498db")
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
-
-            // Add labels
-            const label = svg.append("g")
-                .selectAll("text")
-                .data(nodes)
-                .enter().append("text")
-                .text(d => d.id)
-                .style("font-size", "12px")
-                .style("text-anchor", "middle");
-
-            // Update positions
-            simulation.on("tick", () => {
-                link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                node
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y);
-
-                label
-                    .attr("x", d => d.x)
-                    .attr("y", d => d.y - 15);
-            });
-
-            function dragstarted(event, d) {
-                if (!event.active) simulation.alphaTarget(0.3).restart();
-                d.fx = d.x;
-                d.fy = d.y;
-            }
-
-            function dragged(event, d) {
-                d.fx = event.x;
-                d.fy = event.y;
-            }
-
-            function dragended(event, d) {
-                if (!event.active) simulation.alphaTarget(0);
-                d.fx = null;
-                d.fy = null;
-            }
-
-            // Hub genes
-            const hubGenes = nodes.filter(n => n.degree > 7).map(n => n.id).join(', ');
-            document.getElementById('hubGenes').innerHTML = hubGenes;
-
-            // Network metrics
-            document.getElementById('networkMetrics').innerHTML = `
-                <div>Nodes: ${nodes.length}</div>
-                <div>Edges: ${links.length}</div>
-                <div>Average degree: ${(links.length * 2 / nodes.length).toFixed(1)}</div>
-            `;
-        }
-
-        // Helper function to create DisGeNET network
-        function createDisGeNETNetwork() {
-            const width = 800;
-            const height = 600;
-
-            d3.select("#disgenetNetwork").selectAll("*").remove();
-
-            const svg = d3.select("#disgenetNetwork")
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height);
-
-            // Bipartite network: genes and diseases
-            const genes = [
-                { id: "VEGFA", type: "gene", fc: 1.9 },
-                { id: "HIF1A", type: "gene", fc: 1.2 },
-                { id: "AKT1", type: "gene", fc: 1.5 },
-                { id: "TP53", type: "gene", fc: -1.5 },
-                { id: "SCD", type: "gene", fc: -0.8 }
-            ];
-
-            const diseases = [
-                { id: "Cancer", type: "disease" },
-                { id: "Diabetes", type: "disease" },
-                { id: "CVD", type: "disease" },
-                { id: "Obesity", type: "disease" }
-            ];
-
-            const allNodes = [...genes, ...diseases];
-
-            const links = [
-                { source: "VEGFA", target: "Cancer" },
-                { source: "VEGFA", target: "CVD" },
-                { source: "HIF1A", target: "Cancer" },
-                { source: "AKT1", target: "Cancer" },
-                { source: "AKT1", target: "Diabetes" },
-                { source: "TP53", target: "Cancer" },
-                { source: "SCD", target: "Obesity" },
-                { source: "SCD", target: "Diabetes" }
-            ];
-
-            const simulation = d3.forceSimulation(allNodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-                .force("charge", d3.forceManyBody().strength(-400))
-                .force("center", d3.forceCenter(width / 2, height / 2));
-
-            const link = svg.append("g")
-                .selectAll("line")
-                .data(links)
-                .enter().append("line")
-                .style("stroke", "#999")
-                .style("stroke-width", 1);
-
-            const node = svg.append("g")
-                .selectAll("g")
-                .data(allNodes)
-                .enter().append("g");
-
-            node.append("rect")
-                .attr("width", d => d.type === "disease" ? 80 : 60)
-                .attr("height", 30)
-                .attr("x", d => d.type === "disease" ? -40 : -30)
-                .attr("y", -15)
-                .attr("rx", 5)
-                .style("fill", d => {
-                    if (d.type === "disease") return "#f39c12";
-                    return d.fc > 0 ? "#e74c3c" : "#3498db";
-                });
-
-            node.append("text")
-                .text(d => d.id)
-                .style("text-anchor", "middle")
-                .style("alignment-baseline", "middle")
-                .style("fill", "white")
-                .style("font-size", "12px");
-
-            simulation.on("tick", () => {
-                link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                node.attr("transform", d => `translate(${d.x},${d.y})`);
-            });
-        }
-
-        // Helper function to create enrichment plot
-        function createEnrichmentPlot() {
-            const width = 700;
-            const height = 400;
-            const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-
-            d3.select("#gseaPlot").selectAll("*").remove();
-
-            const svg = d3.select("#gseaPlot")
+            const svg = d3.select("#volcanoPlot")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height);
@@ -1519,34 +727,24 @@
             const g = svg.append("g")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            // Generate sample enrichment score data
-            const n = 100;
-            const data = [];
-            let es = 0;
-            for (let i = 0; i < n; i++) {
-                es += (Math.random() - 0.45) * 0.1;
-                data.push({ rank: i, es: es });
-            }
+            // Prepare data
+            const plotData = analysisData.volcanoData.map(d => ({
+                gene: d.gene,
+                x: d.fc,
+                y: -Math.log10(d.pval),
+                sig: Math.abs(d.fc) > 1 && d.pval < 0.05
+            }));
 
+            // Scales
             const xScale = d3.scaleLinear()
-                .domain([0, n])
+                .domain([-6, 4])
                 .range([0, width - margin.left - margin.right]);
 
             const yScale = d3.scaleLinear()
-                .domain([d3.min(data, d => d.es), d3.max(data, d => d.es)])
+                .domain([0, 6])
                 .range([height - margin.top - margin.bottom, 0]);
 
-            const line = d3.line()
-                .x(d => xScale(d.rank))
-                .y(d => yScale(d.es));
-
-            g.append("path")
-                .datum(data)
-                .attr("fill", "none")
-                .attr("stroke", "#3498db")
-                .attr("stroke-width", 2)
-                .attr("d", line);
-
+            // Add axes
             g.append("g")
                 .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
                 .call(d3.axisBottom(xScale));
@@ -1554,19 +752,70 @@
             g.append("g")
                 .call(d3.axisLeft(yScale));
 
+            // Add axis labels
             g.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("y", 0 - margin.left)
                 .attr("x", 0 - (height - margin.top - margin.bottom) / 2)
                 .attr("dy", "1em")
                 .style("text-anchor", "middle")
-                .text("Enrichment Score");
+                .text("-log10(p-value)");
 
             g.append("text")
                 .attr("x", (width - margin.left - margin.right) / 2)
-                .attr("y", height - margin.top - margin.bottom + 35)
+                .attr("y", height - margin.top - margin.bottom + 40)
                 .style("text-anchor", "middle")
-                .text("Gene Rank");
+                .text("Log2 Fold Change");
+
+            // Add significance lines
+            g.append("line")
+                .attr("x1", xScale(-1))
+                .attr("x2", xScale(-1))
+                .attr("y1", 0)
+                .attr("y2", height - margin.top - margin.bottom)
+                .style("stroke", "#999")
+                .style("stroke-dasharray", "3,3");
+
+            g.append("line")
+                .attr("x1", xScale(1))
+                .attr("x2", xScale(1))
+                .attr("y1", 0)
+                .attr("y2", height - margin.top - margin.bottom)
+                .style("stroke", "#999")
+                .style("stroke-dasharray", "3,3");
+
+            g.append("line")
+                .attr("x1", 0)
+                .attr("x2", width - margin.left - margin.right)
+                .attr("y1", yScale(-Math.log10(0.05)))
+                .attr("y2", yScale(-Math.log10(0.05)))
+                .style("stroke", "#999")
+                .style("stroke-dasharray", "3,3");
+
+            // Add points
+            g.selectAll("circle")
+                .data(plotData)
+                .enter().append("circle")
+                .attr("cx", d => xScale(d.x))
+                .attr("cy", d => yScale(d.y))
+                .attr("r", d => d.sig ? 6 : 4)
+                .style("fill", d => {
+                    if (!d.sig) return "#95a5a6";
+                    return d.x > 0 ? "#e74c3c" : "#3498db";
+                })
+                .style("opacity", d => d.sig ? 0.8 : 0.4);
+
+            // Add gene labels for significant genes
+            g.selectAll("text.gene-label")
+                .data(plotData.filter(d => d.sig))
+                .enter().append("text")
+                .attr("class", "gene-label")
+                .attr("x", d => xScale(d.x))
+                .attr("y", d => yScale(d.y) - 8)
+                .style("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(d => d.gene);
         }
 
         // Initialize on load
