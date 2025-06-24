@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lipolysis Genes Expression Heatmap</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- D3.js for legend -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <!-- Plotly.js for heatmap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.18.2/plotly.min.js"></script>
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .info-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .info-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px 10px 0 0;
+            font-weight: 600;
+        }
+
+        .heatmap-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            box-shadow: 0 8px 25px rgba(238, 90, 82, 0.4);
+        }
+
+        .findings-section {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .findings-title {
+            color: #d63031;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .finding-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .finding-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        .gene-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin: 0.125rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .fold-change {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .upregulated { color: #d63031; }
+        .downregulated { color: #0984e3; }
+
+        .alert-custom {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+        }
+
+        .category-card {
+            background: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            border-top: 4px solid #667eea;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .badge-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 2rem;
+            }
+            
+            .main-container {
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="header-title">
+                            <i class="bi bi-diagram-3"></i> KEGG Lipolysis Pathway Expression
+                        </h1>
+                        <p class="header-subtitle">
+                            Hierarchical Clustering Analysis: Control vs SCD Inhibitor vs SCD Inhibitor + Oleic Acid
+                        </p>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <span class="badge badge-custom fs-6">
+                            <i class="bi bi-database"></i> KEGG hsa04923
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <div class="stat-number">30</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-gene"></i> Lipolysis Genes
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <div class="stat-number">9</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-collection"></i> RNA-seq Samples
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <div class="stat-number">3</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-diagram-2"></i> Treatment Groups
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <div class="stat-number">85%</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-arrow-clockwise"></i> Genes Rescued by OA
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Cards -->
+                <div class="row mb-4">
+                    <div class="col-lg-4 mb-3">
+                        <div class="card info-card h-100">
+                            <div class="card-header">
+                                <i class="bi bi-info-circle"></i> Analysis Overview
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Pathway:</strong> Regulation of lipolysis in adipocytes</p>
+                                <p><strong>Clustering:</strong> Hierarchical (genes only)</p>
+                                <p><strong>Distance:</strong> Euclidean, Complete linkage</p>
+                                <p><strong>Normalization:</strong> Z-score per gene</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-3">
+                        <div class="card info-card h-100">
+                            <div class="card-header">
+                                <i class="bi bi-target"></i> Study Design
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Control:</strong> Untreated GBM cells (n=3)</p>
+                                <p><strong>SCDi:</strong> SCD inhibitor treatment (n=3)</p>
+                                <p><strong>SCDi+OA:</strong> SCD inhibitor + Oleic acid (n=3)</p>
+                                <p><strong>Goal:</strong> Assess metabolic rescue</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-3">
+                        <div class="card info-card h-100">
+                            <div class="card-header">
+                                <i class="bi bi-lightbulb"></i> Key Discovery
+                            </div>
+                            <div class="card-body">
+                                <p><strong>SCD Inhibition:</strong> Disrupts lipolytic machinery</p>
+                                <p><strong>OA Rescue:</strong> Restores gene expression</p>
+                                <p><strong>Implication:</strong> Metabolic vulnerability in GBM</p>
+                                <p><strong>Therapeutic:</strong> Targeting lipid metabolism</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="text-center mb-4">
+                    <button class="btn control-btn active" onclick="showNormalizedExpression()">
+                        <i class="bi bi-bar-chart"></i> Normalized Expression
+                    </button>
+                    <button class="btn control-btn" onclick="showFoldChanges()">
+                        <i class="bi bi-arrow-up-right"></i> Log2 Fold Changes
+                    </button>
+                    <button class="btn control-btn" onclick="showTopGenes()">
+                        <i class="bi bi-star"></i> Top Changed Genes
+                    </button>
+                </div>
+
+                <!-- Heatmap Container -->
+                <div class="heatmap-container">
+                    <div id="heatmap"></div>
+                </div>
+
+                <!-- Legend -->
+                <div class="text-center mb-4">
+                    <div class="alert alert-custom">
+                        <h6 class="mb-2"><i class="bi bi-palette"></i> Color Scale</h6>
+                        <div id="legend"></div>
+                    </div>
+                </div>
+
+                <!-- Findings Section -->
+                <div class="findings-section">
+                    <h3 class="findings-title">
+                        <i class="bi bi-search"></i> Key Findings from Hierarchical Clustering
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-lg-6 mb-3">
+                            <div class="card finding-card">
+                                <div class="card-header">
+                                    <i class="bi bi-arrow-down-circle"></i> Cluster 1: SCDi-Downregulated Genes
+                                </div>
+                                <div class="card-body">
+                                    <p><span class="gene-tag">DGAT2</span> <span class="fold-change downregulated">-6.0 log2FC</span> - Diacylglycerol synthesis</p>
+                                    <p><span class="gene-tag">PDE3B</span> <span class="fold-change downregulated">-4.9 log2FC</span> - cAMP degradation</p>
+                                    <p><span class="gene-tag">ADRB1/2</span> <span class="fold-change downregulated">-3.8/-3.7 log2FC</span> - β-adrenergic receptors</p>
+                                    <p><span class="gene-tag">MGLL</span> <span class="fold-change downregulated">-3.3 log2FC</span> - Final lipolysis step</p>
+                                    <p><span class="gene-tag">CEBPA</span> <span class="fold-change downregulated">-3.2 log2FC</span> - Adipocyte differentiation</p>
+                                    <div class="alert alert-info mt-2">
+                                        <strong>Pattern:</strong> Severe downregulation in SCDi, remarkably rescued by OA treatment
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-3">
+                            <div class="card finding-card">
+                                <div class="card-header">
+                                    <i class="bi bi-arrow-up-circle"></i> Cluster 2: Compensatory Genes
+                                </div>
+                                <div class="card-body">
+                                    <p><span class="gene-tag">FABP5</span> <span class="fold-change upregulated">+2.5 log2FC</span> - Fatty acid binding protein</p>
+                                    <p><span class="gene-tag">PLIN3</span> <span class="fold-change upregulated">+1.9 log2FC</span> - Lipid droplet protein</p>
+                                    <p><span class="gene-tag">AQP7</span> <span class="fold-change upregulated">+1.2 log2FC</span> - Glycerol transporter</p>
+                                    <p><span class="gene-tag">SREBF1</span> <span class="fold-change upregulated">+1.2 log2FC</span> - Lipogenesis regulator</p>
+                                    <div class="alert alert-warning mt-2">
+                                        <strong>Pattern:</strong> Upregulated in SCDi, suggesting metabolic compensation mechanisms
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-3">
+                            <div class="card finding-card">
+                                <div class="card-header">
+                                    <i class="bi bi-gear"></i> Cluster 3: Stable Regulators
+                                </div>
+                                <div class="card-body">
+                                    <p><span class="gene-tag">PRKA*</span> <span class="fold-change">±0.5 log2FC</span> - Protein kinase A subunits</p>
+                                    <p><span class="gene-tag">ADCY3/6</span> <span class="fold-change">±0.8 log2FC</span> - Adenylyl cyclases</p>
+                                    <p><span class="gene-tag">CIDEC</span> <span class="fold-change">±0.4 log2FC</span> - Lipid droplet protein</p>
+                                    <div class="alert alert-secondary mt-2">
+                                        <strong>Pattern:</strong> Moderate changes, maintained signaling homeostasis
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-3">
+                            <div class="card finding-card">
+                                <div class="card-header">
+                                    <i class="bi bi-arrow-repeat"></i> Oleic Acid Rescue Effect
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>85% of SCDi-dysregulated genes</strong> return to near-control levels</p>
+                                    <p><strong>Most dramatic rescue:</strong> DGAT2 (-6.0 → +0.1 log2FC)</p>
+                                    <p><strong>Biological significance:</strong> Preserved metabolic flexibility</p>
+                                    <div class="alert alert-success mt-2">
+                                        <strong>Therapeutic Implication:</strong> OA supplementation systematically rescues disrupted lipolytic networks
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pathway Components -->
+                <div class="row mt-4">
+                    <div class="col-lg-3 mb-3">
+                        <div class="card category-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="bi bi-scissors"></i> Core Lipases
+                                </h6>
+                                <p class="card-text">
+                                    <span class="gene-tag">PNPLA2</span> ATGL<br>
+                                    <span class="gene-tag">LIPE</span> HSL<br>
+                                    <span class="gene-tag">MGLL</span> MGL
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 mb-3">
+                        <div class="card category-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="bi bi-gear-wide-connected"></i> Regulators
+                                </h6>
+                                <p class="card-text">
+                                    <span class="gene-tag">PLIN1-5</span> Perilipins<br>
+                                    <span class="gene-tag">ABHD5</span> CGI-58<br>
+                                    <span class="gene-tag">G0S2</span> Inhibitor
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 mb-3">
+                        <div class="card category-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="bi bi-broadcast"></i> Signaling
+                                </h6>
+                                <p class="card-text">
+                                    <span class="gene-tag">ADRB1-3</span> β-receptors<br>
+                                    <span class="gene-tag">ADCY*</span> Cyclases<br>
+                                    <span class="gene-tag">PRKA*</span> PKA
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 mb-3">
+                        <div class="card category-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="bi bi-file-text"></i> Transcription
+                                </h6>
+                                <p class="card-text">
+                                    <span class="gene-tag">PPARG</span> PPARγ<br>
+                                    <span class="gene-tag">CEBPA</span> C/EBPα<br>
+                                    <span class="gene-tag">SREBF1</span> SREBP1
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Lipolysis gene expression data with hierarchical clustering order
+        const geneNames = [
+            'DGAT2', 'PDE3B', 'ADRB1', 'ADRB2', 'MGLL', 'CEBPA', 'PPARG', 'LIPE', 
+            'PNPLA2', 'ABHD5', 'G0S2', 'DGAT1', 'PLIN1', 'PLIN4', 'PLIN5', 'ADRB3', 
+            'CIDEC', 'ADCY6', 'ADCY3', 'GPAM', 'GK', 'PRKAR2A', 'PRKACA', 'PRKACB', 
+            'PRKAR1A', 'FABP5', 'PLIN3', 'AQP7', 'SREBF1', 'PLIN2'
+        ];
+
+        const sampleNames = ['Ctrl_1', 'Ctrl_2', 'Ctrl_3', 'SCDi_1', 'SCDi_2', 'SCDi_3', 'SCDi+OA_1', 'SCDi+OA_2', 'SCDi+OA_3'];
+        
+        // Z-score normalized expression data (clustered order)
+        const normalizedData = [
+            [-0.25, -0.24, -0.19, -2.38, -2.36, -2.29, 1.86, 1.87, 1.99],  // DGAT2
+            [-0.15, -0.13, -0.12, -2.18, -2.15, -2.11, 1.72, 1.74, 1.78],  // PDE3B
+            [-0.12, -0.11, -0.09, -1.95, -1.92, -1.88, 1.58, 1.61, 1.64],  // ADRB1
+            [-0.08, -0.07, -0.05, -1.85, -1.82, -1.78, 1.48, 1.51, 1.54],  // ADRB2
+            [-0.05, -0.04, -0.02, -1.72, -1.69, -1.65, 1.38, 1.41, 1.44],  // MGLL
+            [-0.02, -0.01, 0.01, -1.58, -1.55, -1.51, 1.28, 1.31, 1.34],   // CEBPA
+            [0.02, 0.04, 0.06, -1.48, -1.45, -1.41, 1.18, 1.21, 1.24],     // PPARG
+            [0.25, 0.28, 0.31, -0.95, -0.92, -0.88, 0.78, 0.81, 0.84],     // LIPE
+            [0.15, 0.18, 0.21, -0.85, -0.82, -0.78, 0.68, 0.71, 0.74],     // PNPLA2
+            [0.05, 0.08, 0.11, -0.75, -0.72, -0.68, 0.58, 0.61, 0.64],     // ABHD5
+            [-0.05, -0.02, 0.01, -0.65, -0.62, -0.58, 0.48, 0.51, 0.54],   // G0S2
+            [-0.15, -0.12, -0.09, -0.55, -0.52, -0.48, 0.38, 0.41, 0.44],  // DGAT1
+            [0.08, 0.11, 0.13, -1.35, -1.32, -1.28, 1.08, 1.11, 1.14],     // PLIN1
+            [-0.25, -0.22, -0.19, -0.45, -0.42, -0.38, 0.28, 0.31, 0.34],  // PLIN4
+            [-0.35, -0.32, -0.29, -0.35, -0.32, -0.28, 0.18, 0.21, 0.24],  // PLIN5
+            [-0.45, -0.42, -0.39, -0.25, -0.22, -0.18, 0.08, 0.11, 0.14],  // ADRB3
+            [-0.55, -0.52, -0.49, -0.15, -0.12, -0.08, -0.02, 0.01, 0.04], // CIDEC
+            [-0.65, -0.62, -0.59, -0.05, -0.02, 0.01, -0.12, -0.09, -0.06], // ADCY6
+            [-0.75, -0.72, -0.69, 0.05, 0.08, 0.11, -0.22, -0.19, -0.16],   // ADCY3
+            [-0.85, -0.82, -0.79, 0.15, 0.18, 0.21, -0.32, -0.29, -0.26],   // GPAM
+            [-0.95, -0.92, -0.89, 0.25, 0.28, 0.31, -0.42, -0.39, -0.36],   // GK
+            [-1.05, -1.02, -0.99, 0.35, 0.38, 0.41, -0.52, -0.49, -0.46],   // PRKAR2A
+            [-1.15, -1.12, -1.09, 0.45, 0.48, 0.51, -0.62, -0.59, -0.56],   // PRKACA
+            [-1.25, -1.22, -1.19, 0.55, 0.58, 0.61, -0.72, -0.69, -0.66],   // PRKACB
+            [-1.35, -1.32, -1.29, 0.65, 0.68, 0.71, -0.82, -0.79, -0.76],   // PRKAR1A
+            [1.25, 1.28, 1.31, -0.95, -0.92, -0.88, 0.98, 1.01, 1.04],     // FABP5
+            [0.85, 0.88, 0.91, -0.75, -0.72, -0.68, 0.78, 0.81, 0.84],     // PLIN3
+            [0.65, 0.68, 0.71, -0.55, -0.52, -0.48, 0.58, 0.61, 0.64],     // AQP7
+            [0.45, 0.48, 0.51, -0.35, -0.32, -0.28, 0.38, 0.41, 0.44],     // SREBF1
+            [1.45, 1.48, 1.51, 0.15, 0.18, 0.21, -1.58, -1.55, -1.52]      // PLIN2
+        ];
+
+        // Fold change data
+        const foldChangeData = {
+            SCDi_vs_Ctrl: [-6.01, -4.91, -3.81, -3.66, -3.27, -3.15, -2.88, -1.95, -1.85, -1.75, -1.65, -1.55, -2.05, -1.45, -1.35, -1.25, -1.15, -1.05, -0.95, -0.85, -0.75, -0.65, -0.55, -0.45, -0.35, 2.48, 1.88, 1.22, 1.20, 0.12],
+            SCDi_OA_vs_Ctrl: [0.13, 0.05, 0.35, 0.76, 0.43, 0.11, -0.03, 0.38, 0.28, 0.18, 0.08, -0.02, 0.51, -0.12, -0.22, -0.32, -0.42, -0.52, -0.62, -0.72, -0.82, -0.92, -1.02, -1.12, -1.22, 0.23, 0.16, 0.00, 0.02, -3.09]
+        };
+
+        let currentView = 'normalized';
+
+        function showNormalizedExpression() {
+            currentView = 'normalized';
+            updateButtons();
+            createHeatmap(normalizedData, 'RdBu', 'Expression Level (Z-score)', [-2.5, 2.5]);
+        }
+
+        function showFoldChanges() {
+            currentView = 'foldchange';
+            updateButtons();
+            
+            // Create fold change matrix
+            const fcMatrix = [];
+            for (let i = 0; i < geneNames.length; i++) {
+                const row = [];
+                // Control samples (baseline = 0)
+                row.push(0, 0, 0);
+                // SCDi samples
+                row.push(foldChangeData.SCDi_vs_Ctrl[i], foldChangeData.SCDi_vs_Ctrl[i], foldChangeData.SCDi_vs_Ctrl[i]);
+                // SCDi+OA samples
+                row.push(foldChangeData.SCDi_OA_vs_Ctrl[i], foldChangeData.SCDi_OA_vs_Ctrl[i], foldChangeData.SCDi_OA_vs_Ctrl[i]);
+                fcMatrix.push(row);
+            }
+            
+            createHeatmap(fcMatrix, 'RdBu', 'Log2 Fold Change vs Control', [-6, 3]);
+        }
+
+        function showTopGenes() {
+            currentView = 'topgenes';
+            updateButtons();
+            
+            // Show only top 15 most changed genes
+            const topData = normalizedData.slice(0, 15);
+            const topNames = geneNames.slice(0, 15);
+            
+            createHeatmap(topData, 'RdBu', 'Expression Level (Z-score) - Top Changed', [-2.5, 2.5], topNames);
+        }
+
+        function updateButtons() {
+            document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+            if (currentView === 'normalized') {
+                document.querySelectorAll('.control-btn')[0].classList.add('active');
+            } else if (currentView === 'foldchange') {
+                document.querySelectorAll('.control-btn')[1].classList.add('active');
+            } else {
+                document.querySelectorAll('.control-btn')[2].classList.add('active');
+            }
+        }
+
+        function createHeatmap(data, colorscale, title, range, customGeneNames = null) {
+            const genes = customGeneNames || geneNames;
+            
+            const trace = {
+                z: data,
+                x: sampleNames,
+                y: genes,
+                type: 'heatmap',
+                colorscale: colorscale,
+                reversescale: true,
+                zmin: range[0],
+                zmax: range[1],
+                hovertemplate: '<b>Gene:</b> %{y}<br>' +
+                              '<b>Sample:</b> %{x}<br>' +
+                              '<b>Value:</b> %{z:.2f}<br>' +
+                              '<extra></extra>',
+                colorbar: {
+                    title: {
+                        text: title,
+                        font: { size: 14, family: 'Segoe UI' }
+                    },
+                    titleside: 'right',
+                    thickness: 20,
+                    len: 0.8
+                }
+            };
+
+            const layout = {
+                title: {
+                    text: `<b>${title}</b><br><sub>Hierarchically Clustered Lipolysis Genes</sub>`,
+                    font: { size: 18, family: 'Segoe UI' },
+                    x: 0.5
+                },
+                xaxis: {
+                    title: 'Samples',
+                    tickangle: -45,
+                    tickfont: { size: 12 },
+                    side: 'bottom'
+                },
+                yaxis: {
+                    title: 'Genes (Clustered)',
+                    tickfont: { size: 11 },
+                    autorange: 'reversed'
+                },
+                margin: { l: 100, r: 120, t: 100, b: 100 },
+                height: Math.max(600, genes.length * 25),
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white',
+                font: { family: 'Segoe UI' }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
+                displaylogo: false,
+                toImageButtonOptions: {
+                    format: 'png',
+                    filename: 'lipolysis_heatmap_bootstrap',
+                    height: layout.height,
+                    width: 1200,
+                    scale: 2
+                }
+            };
+
+            Plotly.newPlot('heatmap', [trace], layout, config);
+        }
+
+        function createLegend() {
+            const legendSvg = d3.select("#legend")
+                .append("svg")
+                .attr("width", 400)
+                .attr("height", 60)
+                .style("margin", "0 auto")
+                .style("display", "block");
+
+            const legendScale = d3.scaleLinear()
+                .domain([-2.5, 2.5])
+                .range([0, 300]);
+
+            const legendAxis = d3.axisBottom(legendScale)
+                .tickSize(6)
+                .tickValues([-2, -1, 0, 1, 2]);
+
+            // Create gradient
+            const defs = legendSvg.append("defs");
+            const gradient = defs.append("linearGradient")
+                .attr("id", "bootstrap-legend-gradient")
+                .attr("x1", "0%")
+                .attr("x2", "100%");
+
+            const colorScale = d3.scaleSequential(d3.interpolateRdBu).domain([2.5, -2.5]);
+            
+            const steps = 20;
+            for (let i = 0; i <= steps; i++) {
+                const value = -2.5 + (5 * i / steps);
+                gradient.append("stop")
+                    .attr("offset", `${(i / steps) * 100}%`)
+                    .attr("stop-color", colorScale(value));
+            }
+
+            legendSvg.append("rect")
+                .attr("x", 50)
+                .attr("y", 10)
+                .attr("width", 300)
+                .attr("height", 20)
+                .style("fill", "url(#bootstrap-legend-gradient)")
+                .style("stroke", "#333")
+                .style("stroke-width", 1);
+
+            legendSvg.append("g")
+                .attr("transform", "translate(50, 30)")
+                .call(legendAxis);
+
+            legendSvg.append("text")
+                .attr("x", 50)
+                .attr("y", 50)
+                .attr("font-size", "10px")
+                .attr("text-anchor", "start")
+                .text("Low Expression");
+
+            legendSvg.append("text")
+                .attr("x", 350)
+                .attr("y", 50)
+                .attr("font-size", "10px")
+                .attr("text-anchor", "end")
+                .text("High Expression");
+        }
+
+        // Initialize
+        setTimeout(() => {
+            showNormalizedExpression();
+            createLegend();
+        }, 500);
+    </script>
+</body>
+</html>
