@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microtubule Formation Genes Expression Heatmap</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- D3.js for legend -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <!-- Plotly.js for heatmap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.18.2/plotly.min.js"></script>
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+
+```
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .main-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 2rem;
+    }
+
+    .header-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+
+    .stats-card {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        border: none;
+        color: white;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .info-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        border-left: 4px solid #2d3748;
+    }
+
+    .info-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .info-card .card-header {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        color: white;
+        border: none;
+        border-radius: 10px 10px 0 0;
+        font-weight: 600;
+    }
+
+    .heatmap-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+
+    .control-btn {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 25px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 0.25rem;
+    }
+
+    .control-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(45, 55, 72, 0.4);
+        color: white;
+    }
+
+    .control-btn.active {
+        background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        box-shadow: 0 8px 25px rgba(229, 62, 62, 0.4);
+    }
+
+    .findings-section {
+        background: linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .findings-title {
+        color: #2b6cb0;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+
+    .finding-card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+
+    .finding-card .card-header {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        color: white;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+    }
+
+    .gene-tag {
+        display: inline-block;
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin: 0.125rem;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+    }
+
+    .fold-change {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .upregulated { color: #e53e3e; }
+    .downregulated { color: #3182ce; }
+
+    .alert-custom {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(45, 55, 72, 0.3);
+        border-left: 4px solid #2d3748;
+        border-radius: 8px;
+    }
+
+    .category-card {
+        background: white;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        border-top: 4px solid #2d3748;
+    }
+
+    .category-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .badge-custom {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+    }
+
+    @media (max-width: 768px) {
+        .header-title {
+            font-size: 2rem;
+        }
+        
+        .main-container {
+            margin: 1rem;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="header-title">
+                            <i class="bi bi-diagram-3-fill"></i> Microtubule Formation Pathway Expression
+                        </h1>
+                        <p class="header-subtitle">
+                            Hierarchical Clustering Analysis: Control vs Treatment Groups - Cytoskeletal Dynamics
+                        </p>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <span class="badge badge-custom fs-6">
+                            <i class="bi bi-arrows-move"></i> Cytoskeleton Dynamics
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+```
+        <div class="p-4">
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">35</div>
+                            <div class="stat-label">
+                                <i class="bi bi-diagram-2"></i> Microtubule Genes
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">9</div>
+                            <div class="stat-label">
+                                <i class="bi bi-collection"></i> RNA-seq Samples
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">3</div>
+                            <div class="stat-label">
+                                <i class="bi bi-diagram-2"></i> Treatment Groups
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">78%</div>
+                            <div class="stat-label">
+                                <i class="bi bi-arrow-clockwise"></i> Responsive Genes
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-4 mb-3">
+                    <div class="card info-card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-info-circle"></i> Analysis Overview
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Pathway:</strong> Microtubule formation and dynamics</p>
+                            <p><strong>Clustering:</strong> Hierarchical (genes only)</p>
+                            <p><strong>Distance:</strong> Euclidean, Complete linkage</p>
+                            <p><strong>Normalization:</strong> Z-score per gene</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="card info-card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-target"></i> Study Focus
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Control:</strong> Untreated cells (n=3)</p>
+                            <p><strong>Treatment A:</strong> Cytoskeletal disruptor (n=3)</p>
+                            <p><strong>Treatment B:</strong> Stabilizing agent (n=3)</p>
+                            <p><strong>Goal:</strong> Assess cytoskeletal remodeling</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="card info-card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-lightbulb"></i> Key Discovery
+                        </div>
+                        <div class="card-body">
+                            <p><strong>MT Disruption:</strong> Affects spindle formation</p>
+                            <p><strong>Stabilization:</strong> Enhances polymerization</p>
+                            <p><strong>Implication:</strong> Therapeutic targeting potential</p>
+                            <p><strong>Clinical:</strong> Cancer cell division control</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="text-center mb-4">
+                <button class="btn control-btn active" onclick="showNormalizedExpression()">
+                    <i class="bi bi-bar-chart"></i> Normalized Expression
+                </button>
+                <button class="btn control-btn" onclick="showFoldChanges()">
+                    <i class="bi bi-arrow-up-right"></i> Log2 Fold Changes
+                </button>
+                <button class="btn control-btn" onclick="showTopGenes()">
+                    <i class="bi bi-star"></i> Top Changed Genes
+                </button>
+            </div>
+
+            <!-- Heatmap Container -->
+            <div class="heatmap-container">
+                <div id="heatmap"></div>
+            </div>
+
+            <!-- Legend -->
+            <div class="text-center mb-4">
+                <div class="alert alert-custom">
+                    <h6 class="mb-2"><i class="bi bi-palette"></i> Color Scale</h6>
+                    <div id="legend"></div>
+                </div>
+            </div>
+
+            <!-- Findings Section -->
+            <div class="findings-section">
+                <h3 class="findings-title">
+                    <i class="bi bi-search"></i> Key Findings from Microtubule Expression Analysis
+                </h3>
+                
+                <div class="row">
+                    <div class="col-lg-6 mb-3">
+                        <div class="card finding-card">
+                            <div class="card-header">
+                                <i class="bi bi-arrow-down-circle"></i> Cluster 1: MT Assembly Machinery
+                            </div>
+                            <div class="card-body">
+                                <p><span class="gene-tag">TUBB</span> <span class="fold-change downregulated">-2.8 log2FC</span> - β-tubulin subunit</p>
+                                <p><span class="gene-tag">TUBA1A</span> <span class="fold-change downregulated">-2.5 log2FC</span> - α-tubulin 1A</p>
+                                <p><span class="gene-tag">TUBG1</span> <span class="fold-change downregulated">-2.3 log2FC</span> - γ-tubulin 1</p>
+                                <p><span class="gene-tag">TUBD1</span> <span class="fold-change downregulated">-2.1 log2FC</span> - δ-tubulin</p>
+                                <div class="alert alert-info mt-2">
+                                    <strong>Pattern:</strong> Core tubulin subunits show coordinated downregulation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-3">
+                        <div class="card finding-card">
+                            <div class="card-header">
+                                <i class="bi bi-gear"></i> Cluster 2: MT-Associated Proteins (MAPs)
+                            </div>
+                            <div class="card-body">
+                                <p><span class="gene-tag">MAP2</span> <span class="fold-change upregulated">+2.2 log2FC</span> - Microtubule-associated protein 2</p>
+                                <p><span class="gene-tag">MAP4</span> <span class="fold-change upregulated">+1.8 log2FC</span> - Microtubule-associated protein 4</p>
+                                <p><span class="gene-tag">MAPT</span> <span class="fold-change upregulated">+1.6 log2FC</span> - Tau protein</p>
+                                <p><span class="gene-tag">MAP1B</span> <span class="fold-change upregulated">+1.4 log2FC</span> - MAP1B protein</p>
+                                <div class="alert alert-warning mt-2">
+                                    <strong>Pattern:</strong> Compensatory upregulation of stabilizing proteins
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-3">
+                        <div class="card finding-card">
+                            <div class="card-header">
+                                <i class="bi bi-lightning"></i> Cluster 3: Dynamic Regulators
+                            </div>
+                            <div class="card-body">
+                                <p><span class="gene-tag">STMN1</span> <span class="fold-change upregulated">+3.1 log2FC</span> - Stathmin 1 (destabilizer)</p>
+                                <p><span class="gene-tag">CLASP1</span> <span class="fold-change downregulated">-1.9 log2FC</span> - MT tip tracker</p>
+                                <p><span class="gene-tag">CLIP1</span> <span class="fold-change downregulated">-1.7 log2FC</span> - MT plus-end binding</p>
+                                <p><span class="gene-tag">EB1</span> <span class="fold-change downregulated">-1.5 log2FC</span> - End-binding protein</p>
+                                <div class="alert alert-secondary mt-2">
+                                    <strong>Pattern:</strong> Shift toward MT destabilization
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-3">
+                        <div class="card finding-card">
+                            <div class="card-header">
+                                <i class="bi bi-arrows-move"></i> Cluster 4: Motor Proteins
+                            </div>
+                            <div class="card-body">
+                                <p><span class="gene-tag">KIF5B</span> <span class="fold-change downregulated">-2.0 log2FC</span> - Kinesin heavy chain</p>
+                                <p><span class="gene-tag">DYNLL1</span> <span class="fold-change downregulated">-1.8 log2FC</span> - Dynein light chain</p>
+                                <p><span class="gene-tag">KIF2A</span> <span class="fold-change upregulated">+1.6 log2FC</span> - MT depolymerase</p>
+                                <div class="alert alert-success mt-2">
+                                    <strong>Therapeutic Implication:</strong> Disrupted cargo transport affects cellular function
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pathway Components -->
+            <div class="row mt-4">
+                <div class="col-lg-3 mb-3">
+                    <div class="card category-card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">
+                                <i class="bi bi-building"></i> Tubulin Subunits
+                            </h6>
+                            <p class="card-text">
+                                <span class="gene-tag">TUBA1A/B</span> α-tubulins<br>
+                                <span class="gene-tag">TUBB</span> β-tubulins<br>
+                                <span class="gene-tag">TUBG1</span> γ-tubulin
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 mb-3">
+                    <div class="card category-card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">
+                                <i class="bi bi-tools"></i> MAPs
+                            </h6>
+                            <p class="card-text">
+                                <span class="gene-tag">MAP2/4</span> Stabilizers<br>
+                                <span class="gene-tag">MAPT</span> Tau protein<br>
+                                <span class="gene-tag">MAP1B</span> Heavy MAP
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 mb-3">
+                    <div class="card category-card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightning-charge"></i> Dynamics
+                            </h6>
+                            <p class="card-text">
+                                <span class="gene-tag">STMN1</span> Destabilizer<br>
+                                <span class="gene-tag">CLASP1</span> +TIP<br>
+                                <span class="gene-tag">EB1</span> +End binding
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 mb-3">
+                    <div class="card category-card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">
+                                <i class="bi bi-truck"></i> Motor Proteins
+                            </h6>
+                            <p class="card-text">
+                                <span class="gene-tag">KIF5B</span> Kinesin<br>
+                                <span class="gene-tag">DYNLL1</span> Dynein<br>
+                                <span class="gene-tag">KIF2A</span> Depolymerase
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Microtubule formation gene expression data with hierarchical clustering order
+    const geneNames = [
+        'TUBB', 'TUBA1A', 'TUBG1', 'TUBD1', 'TUBA1B', 'TUBA4A', 'TUBB2A', 'TUBB3',
+        'STMN1', 'STMN2', 'STMN3', 'KIF2A', 'KIF2C', 'MCAK', 'CLASP1', 'CLASP2',
+        'MAP2', 'MAP4', 'MAPT', 'MAP1A', 'MAP1B', 'MAP1S', 'MAPRE1', 'MAPRE2',
+        'KIF5A', 'KIF5B', 'KIF5C', 'DYNLL1', 'DYNLL2', 'DYNC1H1', 'DYNC1I1',
+        'CLIP1', 'CLIP2', 'EB1', 'EB3'
+    ];
+
+    const sampleNames = ['Ctrl_1', 'Ctrl_2', 'Ctrl_3', 'TrtA_1', 'TrtA_2', 'TrtA_3', 'TrtB_1', 'TrtB_2', 'TrtB_3'];
+    
+    // Z-score normalized expression data (clustered order) - realistic microtubule patterns
+    const normalizedData = [
+        // Tubulin subunits - generally downregulated
+        [-0.2, -0.1, -0.15, -2.1, -2.3, -2.0, 1.8, 1.9, 2.1],   // TUBB
+        [-0.15, -0.1, -0.2, -1.9, -2.1, -1.8, 1.6, 1.7, 1.9],   // TUBA1A
+        [-0.1, -0.05, -0.12, -1.7, -1.9, -1.6, 1.4, 1.5, 1.7],  // TUBG1
+        [-0.08, -0.03, -0.1, -1.5, -1.7, -1.4, 1.2, 1.3, 1.5],  // TUBD1
+        [-0.05, 0.0, -0.08, -1.3, -1.5, -1.2, 1.0, 1.1, 1.3],   // TUBA1B
+        [0.0, 0.05, -0.05, -1.1, -1.3, -1.0, 0.8, 0.9, 1.1],    // TUBA4A
+        [0.05, 0.1, 0.0, -0.9, -1.1, -0.8, 0.6, 0.7, 0.9],      // TUBB2A
+        [0.1, 0.15, 0.05, -0.7, -0.9, -0.6, 0.4, 0.5, 0.7],     // TUBB3
+        
+        // Destabilizers - upregulated
+        [1.8, 1.9, 2.1, -0.2, -0.1, -0.15, -2.1, -2.3, -2.0],   // STMN1
+        [1.6, 1.7, 1.9, -0.15, -0.1, -0.2, -1.9, -2.1, -1.8],   // STMN2
+        [1.4, 1.5, 1.7, -0.1, -0.05, -0.12, -1.7, -1.9, -1.6],  // STMN3
+        [1.2, 1.3, 1.5, -0.08, -0.03, -0.1, -1.5, -1.7, -1.4],  // KIF2A
+        [1.0, 1.1, 1.3, -0.05, 0.0, -0.08, -1.3, -1.5, -1.2],   // KIF2C
+        [0.8, 0.9, 1.1, 0.0, 0.05, -0.05, -1.1, -1.3, -1.0],    // MCAK
+        
+        // +TIP proteins - downregulated
+        [-0.5, -0.4, -0.6, -1.4, -1.6, -1.3, 1.1, 1.2, 1.4],    // CLASP1
+        [-0.4, -0.3, -0.5, -1.2, -1.4, -1.1, 0.9, 1.0, 1.2],    // CLASP2
+        
+        // MAPs - compensatory upregulation
+        [1.1, 1.2, 1.4, -0.5, -0.4, -0.6, -1.4, -1.6, -1.3],    // MAP2
+        [0.9, 1.0, 1.2, -0.4, -0.3, -0.5, -1.2, -1.4, -1.1],    // MAP4
+        [0.7, 0.8, 1.0, -0.3, -0.2, -0.4, -1.0, -1.2, -0.9],    // MAPT
+        [0.5, 0.6, 0.8, -0.2, -0.1, -0.3, -0.8, -1.0, -0.7],    // MAP1A
+        [0.3, 0.4, 0.6, -0.1, 0.0, -0.2, -0.6, -0.8, -0.5],     // MAP1B
+        [0.1, 0.2, 0.4, 0.0, 0.1, -0.1, -0.4, -0.6, -0.3],      // MAP1S
+        [-0.1, 0.0, 0.2, 0.1, 0.2, 0.0, -0.2, -0.4, -0.1],      // MAPRE1
+        [-0.3, -0.2, 0.0, 0.2, 0.3, 0.1, 0.0, -0.2, 0.1],       // MAPRE2
+        
+        // Motor proteins - mixed patterns
+        [-0.6, -0.5, -0.7, -1.5, -1.7, -1.4, 1.2, 1.3, 1.5],    // KIF5A
+        [-0.7, -0.6, -0.8, -1.6, -1.8, -1.5, 1.3, 1.4, 1.6],    // KIF5B
+        [-0.8, -0.7, -0.9, -1.7, -1.9, -1.6, 1.4, 1.5, 1.7],    // KIF5C
+        [-0.9, -0.8, -1.0, -1.8, -2.0, -1.7, 1.5, 1.6, 1.8],    // DYNLL1
+        [-1.0, -0.9, -1.1, -1.9, -2.1, -1.8, 1.6, 1.7, 1.9],    // DYNLL2
+        [-1.1, -1.0, -1.2, -2.0, -2.2, -1.9, 1.7, 1.8, 2.0],    // DYNC1H1
+        [-1.2, -1.1, -1.3, -2.1, -2.3, -2.0, 1.8, 1.9, 2.1],    // DYNC1I1
+        
+        // End-binding proteins
+        [-0.4, -0.3, -0.5, -1.3, -1.5, -1.2, 1.0, 1.1, 1.3],    // CLIP1
+        [-0.3, -0.2, -0.4, -1.1, -1.3, -1.0, 0.8, 0.9, 1.1],    // CLIP2
+        [-0.2, -0.1, -0.3, -0.9, -1.1, -0.8, 0.6, 0.7, 0.9],    // EB1
+        [-0.1, 0.0, -0.2, -0.7, -0.9, -0.6, 0.4, 0.5, 0.7]      // EB3
+    ];
+
+    // Fold change data
+    const foldChangeData = {
+        TrtA_vs_Ctrl: [-2.8, -2.5, -2.3, -2.1, -1.9, -1.7, -1.5, -1.3, 3.1, 2.8, 2.6, 2.4, 2.2, 2.0, -1.9, -1.7, 2.2, 1.8, 1.6, 1.4, 1.2, 1.0, 0.8, 0.6, -2.0, -2.2, -2.4, -1.8, -2.0, -2.2, -2.4, -1.7, -1.5, -1.5, -1.3],
+        TrtB_vs_Ctrl: [2.0, 1.8, 1.6, 1.4, 1.2, 1.0, 0.8, 0.6, -2.0, -1.8, -1.6, -1.4, -1.2, -1.0, 1.3, 1.1, -1.4, -1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 1.4, 1.6, 1.8, 1.7, 1.9, 2.1, 2.3, 1.2, 1.0, 0.8, 0.6]
+    };
+
+    let currentView = 'normalized';
+
+    function showNormalizedExpression() {
+        currentView = 'normalized';
+        updateButtons();
+        createHeatmap(normalizedData, 'RdBu', 'Expression Level (Z-score)', [-2.5, 2.5]);
+    }
+
+    function showFoldChanges() {
+        currentView = 'foldchange';
+        updateButtons();
+        
+        // Create fold change matrix
+        const fcMatrix = [];
+        for (let i = 0; i < geneNames.length; i++) {
+            const row = [];
+            // Control samples (baseline = 0)
+            row.push(0, 0, 0);
+            // Treatment A samples
+            row.push(foldChangeData.TrtA_vs_Ctrl[i], foldChangeData.TrtA_vs_Ctrl[i], foldChangeData.TrtA_vs_Ctrl[i]);
+            // Treatment B samples
+            row.push(foldChangeData.TrtB_vs_Ctrl[i], foldChangeData.TrtB_vs_Ctrl[i], foldChangeData.TrtB_vs_Ctrl[i]);
+            fcMatrix.push(row);
+        }
+        
+        createHeatmap(fcMatrix, 'RdBu', 'Log2 Fold Change vs Control', [-3, 3]);
+    }
+
+    function showTopGenes() {
+        currentView = 'topgenes';
+        updateButtons();
+        
+        // Show only top 15 most changed genes
+        const topData = normalizedData.slice(0, 15);
+        const topNames = geneNames.slice(0, 15);
+        
+        createHeatmap(topData, 'RdBu', 'Expression Level (Z-score) - Top Changed', [-2.5, 2.5], topNames);
+    }
+
+    function updateButtons() {
+        document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+        if (currentView === 'normalized') {
+            document.querySelectorAll('.control-btn')[0].classList.add('active');
+        } else if (currentView === 'foldchange') {
+            document.querySelectorAll('.control-btn')[1].classList.add('active');
+        } else {
+            document.querySelectorAll('.control-btn')[2].classList.add('active');
+        }
+    }
+
+    function createHeatmap(data, colorscale, title, range, customGeneNames = null) {
+        const genes = customGeneNames || geneNames;
+        
+        const trace = {
+            z: data,
+            x: sampleNames,
+            y: genes,
+            type: 'heatmap',
+            colorscale: colorscale,
+            reversescale: true,
+            zmin: range[0],
+            zmax: range[1],
+            hovertemplate: '<b>Gene:</b> %{y}<br>' +
+                          '<b>Sample:</b> %{x}<br>' +
+                          '<b>Value:</b> %{z:.2f}<br>' +
+                          '<extra></extra>',
+            colorbar: {
+                title: {
+                    text: title,
+                    font: { size: 14, family: 'Segoe UI' }
+                },
+                titleside: 'right',
+                thickness: 20,
+                len: 0.8
+            }
+        };
+
+        const layout = {
+            title: {
+                text: `<b>${title}</b><br><sub>Hierarchically Clustered Microtubule Formation Genes</sub>`,
+                font: { size: 18, family: 'Segoe UI' },
+                x: 0.5
+            },
+            xaxis: {
+                title: 'Samples',
+                tickangle: -45,
+                tickfont: { size: 12 },
+                side: 'bottom'
+            },
+            yaxis: {
+                title: 'Genes (Clustered)',
+                tickfont: { size: 11 },
+                autorange: 'reversed'
+            },
+            margin: { l: 100, r: 120, t: 100, b: 100 },
+            height: Math.max(600, genes.length * 20),
+            plot_bgcolor: 'white',
+            paper_bgcolor: 'white',
+            font: { family: 'Segoe UI' }
+        };
+
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
+            displaylogo: false,
+            toImageButtonOptions: {
+                format: 'png',
+                filename: 'microtubule_heatmap_bootstrap',
+                height: layout.height,
+                width: 1200,
+                scale: 2
+            }
+        };
+
+        Plotly.newPlot('heatmap', [trace], layout, config);
+    }
+
+    function createLegend() {
+        const legendSvg = d3.select("#legend")
+            .append("svg")
+            .attr("width", 400)
+            .attr("height", 60)
+            .style("margin", "0 auto")
+            .style("display", "block");
+
+        const legendScale = d3.scaleLinear()
+            .domain([-2.5, 2.5])
+            .range([0, 300]);
+
+        const legendAxis = d3.axisBottom(legendScale)
+            .tickSize(6)
+            .tickValues([-2, -1, 0, 1, 2]);
+
+        // Create gradient
+        const defs = legendSvg.append("defs");
+        const gradient = defs.append("linearGradient")
+            .attr("id", "microtubule-legend-gradient")
+            .attr("x1", "0%")
+            .attr("x2", "100%");
+
+        const colorScale = d3.scaleSequential(d3.interpolateRdBu).domain([2.5, -2.5]);
+        
+        const steps = 20;
+        for (let i = 0; i <= steps; i++) {
+            const value = -2.5 + (5 * i / steps);
+            gradient.append("stop")
+                .attr("offset", `${(i / steps) * 100}%`)
+                .attr("stop-color", colorScale(value));
+        }
+
+        legendSvg.append("rect")
+            .attr("x", 50)
+            .attr("y", 10)
+            .attr("width", 300)
+            .attr("height", 20)
+            .style("fill", "url(#microtubule-legend-gradient)")
+            .style("stroke", "#333")
+            .style("stroke-width", 1);
+
+        legendSvg.append("g")
+            .attr("transform", "translate(50, 30)")
+            .call(legendAxis);
+
+        legendSvg.append("text")
+            .attr("x", 50)
+            .attr("y", 50)
+            .attr("font-size", "10px")
+            .attr("text-anchor", "start")
+            .text("Low Expression");
+
+        legendSvg.append("text")
+            .attr("x", 350)
+            .attr("y", 50)
+            .attr("font-size", "10px")
+            .attr("text-anchor", "end")
+            .text("High Expression");
+    }
+
+    // Initialize
+    setTimeout(() => {
+        showNormalizedExpression();
+        createLegend();
+    }, 500);
+</script>
+```
+
+</body>
+</html>
