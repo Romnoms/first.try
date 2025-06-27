@@ -1,501 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIPG Research Data Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .svg-header {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        
+        .header .subtitle {
+            margin-bottom: 20px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .dropdown-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .dropdown-container label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        #contentSelector {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: white;
+            color: #2c3e50;
+            cursor: pointer;
+            min-width: 200px;
+            transition: all 0.3s ease;
+        }
+        
+        #contentSelector:hover {
+            background-color: #ecf0f1;
+        }
+        
+        #contentSelector:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+        
+        .content-area {
+            padding: 40px;
+            min-height: 500px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .content-item {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .content-item.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .placeholder-content {
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            border: 2px dashed #bdc3c7;
+        }
+        
+        .placeholder-content h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .placeholder-content p {
+            color: #7f8c8d;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .placeholder-icon {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+        
+        .footer {
+            background-color: #34495e;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+        
+        /* Heatmap Styles */
+        .heatmap-content .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #CCCCCC;
+        }
+        
+        .heatmap-header { 
+            text-align: center; 
+            padding: 30px 20px; 
+            background: #E8E8E8;
+            color: #000000;
+            border-bottom: 2px solid #CCCCCC;
+        }
+        
+        .heatmap-header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #000000;
+        }
+        
+        .heatmap-header p {
+            font-size: 1.1em;
+            color: #333333;
+            font-weight: normal;
+        }
+        
+        .stats { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 20px; 
+            padding: 30px; 
+            background: #F5F5F5;
+            border-bottom: 1px solid #CCCCCC;
+        }
+        
+        .stat-card { 
+            background: #FFFFFF; 
+            padding: 20px; 
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #DDDDDD;
+        }
+        
+        .stat-card h3 {
+            font-size: 1.1em;
+            color: #000000;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .stat-card p {
+            font-size: 1.3em;
+            color: #000000;
+            font-weight: bold;
+        }
+        
+        .heatmap-container { 
+            padding: 30px; 
+            background: #F5F5F5;
+            overflow-x: auto;
+        }
+        
+        .heatmap { 
+            display: grid; 
+            grid-template-columns: 250px repeat(2, 120px); 
+            gap: 2px; 
+            background: #CCCCCC;
+            border: 2px solid #888888;
+            border-radius: 8px;
+            overflow: hidden;
+            min-width: 500px;
+        }
+        
+        .header-cell { 
+            padding: 15px 10px; 
+            font-size: 14px; 
+            font-weight: bold;
+            text-align: center;
+            background: #888888;
+            color: #FFFFFF;
+            border: 1px solid #666666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50px;
+        }
+        
+        .drug-label { 
+            padding: 8px 15px; 
+            font-size: 13px; 
+            font-weight: bold;
+            text-align: left;
+            background: #E0E0E0;
+            color: #000000;
+            border: 1px solid #AAAAAA;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .heatmap-cell { 
+            padding: 12px 8px; 
+            text-align: center; 
+            font-size: 12px; 
+            font-weight: bold;
+            color: #000000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #888888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+        }
+        
+        .heatmap-cell:hover { 
+            transform: scale(1.1); 
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border: 2px solid #000000;
+        }
+        
+        .legend { 
+            margin: 30px; 
+            padding: 25px; 
+            background: #FFFFFF;
+            border: 1px solid #CCCCCC;
+            border-radius: 8px;
+        }
+        
+        .legend h3 {
+            color: #000000;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .color-scale { 
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .color-scale div {
+            padding: 15px 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid #CCCCCC;
+            border-radius: 4px;
+            color: #000000;
+        }
+        
+        .interpretation { 
+            background: #E8F4F8; 
+            padding: 20px; 
+            margin: 0;
+            text-align: center;
+            border-bottom: 1px solid #CCCCCC;
+        }
+        
+        .interpretation p {
+            font-size: 1.1em;
+            margin: 5px 0;
+            color: #000000;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin: 20px 30px;
+            padding: 12px 20px;
+            background: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: #0056B3;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid #FFFFFF;
+        }
 
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DIPG Drug Inhibition Heatmaps - Interactive Dashboard</title>
-        <style>
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { 
-                font-family: Verdana, Arial, sans-serif; 
-                background: #F5F5F5;
-                min-height: 100vh;
-                padding: 20px;
-                color: #000000;
-                line-height: 1.4;
-            }
-            .container {
-                max-width: 1400px;
-                margin: 0 auto;
-                background: #FFFFFF;
-                border-radius: 8px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                overflow: hidden;
-                border: 1px solid #CCCCCC;
-            }
-            .header { 
-                text-align: center; 
-                padding: 50px 20px; 
-                background: #E8E8E8;
-                color: #000000;
-                border-bottom: 2px solid #CCCCCC;
-            }
+        /* Responsive design */
+        @media (max-width: 768px) {
             .header h1 {
-                font-size: 3em;
-                margin-bottom: 15px;
-                font-weight: bold;
-                color: #000000;
+                font-size: 22px;
             }
-            .header p {
-                font-size: 1.3em;
-                color: #333333;
-                line-height: 1.6;
-                font-weight: normal;
+            
+            .dropdown-container {
+                flex-direction: column;
             }
-            .summary { 
-                background: #F0F0F0;
-                color: #000000;
-                padding: 40px; 
-                margin: 0;
-                border-bottom: 1px solid #CCCCCC;
-            }
-            .summary h2 {
-                font-size: 2em;
-                margin-bottom: 20px;
-                color: #000000;
-                font-weight: bold;
-            }
-            .summary p {
-                font-size: 1.1em;
-                line-height: 1.8;
-                margin-bottom: 15px;
-                color: #000000;
-            }
-            .category-grid { 
-                display: grid; 
-                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
-                gap: 30px; 
-                padding: 50px 40px;
-                background: #F8F8F8;
-            }
-            .category-card { 
-                background: #FFFFFF;
-                border-radius: 8px; 
-                padding: 30px; 
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                transition: all 0.3s ease;
-                border: 1px solid #DDDDDD;
-            }
-            .category-card:hover { 
-                transform: translateY(-5px); 
-                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-                border-color: #AAAAAA;
-            }
-            .category-title { 
-                color: #000000; 
-                font-size: 1.4em; 
-                font-weight: bold; 
-                margin-bottom: 20px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .stats { 
-                font-size: 14px; 
-                color: #333333; 
-                margin-bottom: 25px; 
-                line-height: 1.8;
-            }
-            .stats div { 
-                margin: 10px 0; 
-                padding: 8px 0;
-                border-bottom: 1px solid #EEEEEE;
-            }
-            .stats div:last-child {
-                border-bottom: none;
-            }
-            .stats strong {
-                color: #000000;
-                display: inline-block;
-                min-width: 120px;
-                font-weight: bold;
-            }
-            .btn { 
-                display: inline-block;
-                padding: 15px 30px; 
-                border: 1px solid #AAAAAA; 
-                border-radius: 4px; 
-                text-decoration: none; 
-                font-weight: bold; 
-                transition: all 0.3s ease;
-                text-align: center;
-                font-size: 1.1em;
+            
+            #contentSelector {
                 width: 100%;
-                background: #DDDDDD;
-                color: #000000;
-                font-family: Verdana, Arial, sans-serif;
+                max-width: 300px;
             }
-            .btn:hover { 
-                background: #CCCCCC;
-                border-color: #888888;
+            
+            .content-area {
+                padding: 20px;
             }
-            .footer {
-                text-align: center;
-                padding: 40px;
-                background: #E8E8E8;
-                color: #000000;
-                font-size: 1.1em;
-                border-top: 1px solid #CCCCCC;
+            
+            .heatmap { 
+                grid-template-columns: 200px repeat(2, 100px); 
+                min-width: 420px;
             }
-            .stats-highlight {
-                background: #DDDDDD;
-                color: #000000;
-                padding: 3px 8px;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 0.9em;
-                border: 1px solid #AAAAAA;
+            
+            .stats { 
+                grid-template-columns: 1fr; 
+                padding: 20px;
             }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>DIPG Drug Inhibition Heatmaps</h1>
-                <p>Interactive Dashboard for Cell Death Analysis</p>
-                <p>Comprehensive visualization of drug efficacy</p>
-            </div>
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- DIPG Research Header SVG -->
+        <svg class="svg-header" viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <!-- Background gradient -->
+            <defs>
+                <!-- Main gradient -->
+                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#2a5298;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#7e8ba3;stop-opacity:1" />
+                </linearGradient>
+                
+                <!-- DNA gradient -->
+                <linearGradient id="dnaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:0.8" />
+                    <stop offset="100%" style="stop-color:#2196F3;stop-opacity:0.8" />
+                </linearGradient>
+                
+                
+                <!-- Glow effect -->
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                
+                <!-- Text glow effect -->
+                <filter id="textGlow">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                
+                <!-- Lab logo gradient -->
+                <linearGradient id="labGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FF6B35;stop-opacity:1" />
+                </linearGradient>
+                
+                <!-- Neural pattern -->
+                <pattern id="neuralPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <circle cx="10" cy="10" r="2" fill="#ffffff" opacity="0.1"/>
+                    <circle cx="30" cy="20" r="2" fill="#ffffff" opacity="0.1"/>
+                    <circle cx="50" cy="15" r="2" fill="#ffffff" opacity="0.1"/>
+                    <circle cx="70" cy="25" r="2" fill="#ffffff" opacity="0.1"/>
+                    <circle cx="90" cy="10" r="2" fill="#ffffff" opacity="0.1"/>
+                    <line x1="10" y1="10" x2="30" y2="20" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
+                    <line x1="30" y1="20" x2="50" y2="15" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
+                    <line x1="50" y1="15" x2="70" y2="25" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
+                </pattern>
+            </defs>
             
-            <div class="summary">
-                <h2>Analysis Overview</h2>
-                <p><strong>Objective:</strong> Visualize drug efficacy in killing DIPG (Diffuse Intrinsic Pontine Glioma) cancer cells across different therapeutic categories.</p>
-                <p><strong>Data Interpretation:</strong> <strong>Positive values = Good</strong> (% cells killed), <strong>Negative values = Bad</strong> (cell growth occurred)</p>
-                <p><strong>Layout:</strong> Each heatmap shows drugs as rows and DIPG cell lines (4 & 17) as columns.</p>
-                <p><strong>Color Coding:</strong> Warm colors (Orange/Red) = High cell death (effective) → Cool colors (Blue) = Cell growth (ineffective)</p>
-                <p><strong>Accessibility:</strong> Colorblind-friendly palette with high contrast black text on light backgrounds.</p>
-            </div>
+            <!-- Background -->
+            <rect width="1200" height="300" fill="url(#bgGradient)"/>
+            <rect width="1200" height="300" fill="url(#neuralPattern)"/>
             
-            <div class="category-grid">
-    
-            <div class="category-card">
-                <div class="category-title">
-                    EGFR
-                    <span class="stats-highlight">Effective</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 8</div>
-                    <div><strong>Best Inhibitor:</strong> JCN037</div>
-                    <div><strong>Best Score:</strong> 81.50%</div>
-                    <div><strong>Worst Performer:</strong> Icotinib</div>
-                    <div><strong>Avg DIPG 4:</strong> 28.3%</div>
-                    <div><strong>Avg DIPG 17:</strong> 30.4%</div>
-                </div>
-                <a href="EGFR_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
+            <!-- Emory Medical School Logo -->
+            <image href="https://med.emory.edu/assets/images/logo-secondary-invert.svg" 
+                   x="50" y="50" width="200" height="91" 
+                   opacity="0.9"/>
             
-            <div class="category-card">
-                <div class="category-title">
-                    Autophagy
-                    <span class="stats-highlight">Moderate</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 57</div>
-                    <div><strong>Best Inhibitor:</strong> Flavopiridol (Hydrochloride)</div>
-                    <div><strong>Best Score:</strong> 91.92%</div>
-                    <div><strong>Worst Performer:</strong> Irinotecan</div>
-                    <div><strong>Avg DIPG 4:</strong> 16.3%</div>
-                    <div><strong>Avg DIPG 17:</strong> 16.2%</div>
-                </div>
-                <a href="Autophagy_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
             
-            <div class="category-card">
-                <div class="category-title">
-                    Apoptosis
-                    <span class="stats-highlight">Moderate</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 96</div>
-                    <div><strong>Best Inhibitor:</strong> Vorinostat</div>
-                    <div><strong>Best Score:</strong> 87.24%</div>
-                    <div><strong>Worst Performer:</strong> Pomalidomide</div>
-                    <div><strong>Avg DIPG 4:</strong> 12.6%</div>
-                    <div><strong>Avg DIPG 17:</strong> 12.7%</div>
-                </div>
-                <a href="Apoptosis_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
+            <!-- DNA Double Helix -->
+            <g transform="translate(600, 150)">
+                <path d="M -100,-80 Q -50,-60 0,-80 Q 50,-100 100,-80" 
+                      fill="none" stroke="url(#dnaGradient)" stroke-width="4" filter="url(#glow)"/>
+                <path d="M -100,-40 Q -50,-20 0,-40 Q 50,-60 100,-40" 
+                      fill="none" stroke="url(#dnaGradient)" stroke-width="4" filter="url(#glow)"/>
+                <path d="M -100,0 Q -50,20 0,0 Q 50,-20 100,0" 
+                      fill="none" stroke="url(#dnaGradient)" stroke-width="4" filter="url(#glow)"/>
+                <path d="M -100,40 Q -50,60 0,40 Q 50,20 100,40" 
+                      fill="none" stroke="url(#dnaGradient)" stroke-width="4" filter="url(#glow)"/>
+                <path d="M -100,80 Q -50,100 0,80 Q 50,60 100,80" 
+                      fill="none" stroke="url(#dnaGradient)" stroke-width="4" filter="url(#glow)"/>
+                
+                <!-- DNA connections -->
+                <line x1="-75" y1="-70" x2="-75" y2="-50" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+                <line x1="-25" y1="-70" x2="-25" y2="-50" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+                <line x1="25" y1="-90" x2="25" y2="-70" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+                <line x1="75" y1="-70" x2="75" y2="-50" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+            </g>
             
-            <div class="category-card">
-                <div class="category-title">
-                    Serotonin Transporter
-                    <span class="stats-highlight">Moderate</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 11</div>
-                    <div><strong>Best Inhibitor:</strong> Clomipramine (hydrochloride)</div>
-                    <div><strong>Best Score:</strong> 91.91%</div>
-                    <div><strong>Worst Performer:</strong> Fluvoxamine (maleate)</div>
-                    <div><strong>Avg DIPG 4:</strong> 13.0%</div>
-                    <div><strong>Avg DIPG 17:</strong> 8.3%</div>
-                </div>
-                <a href="Serotonin_Transporter_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
             
-            <div class="category-card">
-                <div class="category-title">
-                    mGluR
-                    <span class="stats-highlight">Moderate</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 15</div>
-                    <div><strong>Best Inhibitor:</strong> AMN082</div>
-                    <div><strong>Best Score:</strong> 70.92%</div>
-                    <div><strong>Worst Performer:</strong> VU6012962</div>
-                    <div><strong>Avg DIPG 4:</strong> 8.3%</div>
-                    <div><strong>Avg DIPG 17:</strong> 10.3%</div>
-                </div>
-                <a href="mGluR_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
+            <!-- Dasgupta Lab Logo -->
+            <g transform="translate(950, 150)">
+                <!-- Background circle -->
+                <circle cx="0" cy="0" r="70" fill="url(#labGradient)" opacity="0.2" stroke="url(#labGradient)" stroke-width="2"/>
+                
+                <!-- Lab flask/beaker icon -->
+                <g id="labIcon">
+                    <!-- Flask outline -->
+                    <path d="M -15,-40 L -15,-30 L -25,10 C -28,20 -25,30 -15,35 L 15,35 C 25,30 28,20 25,10 L 15,-30 L 15,-40 Z" 
+                          fill="none" stroke="url(#labGradient)" stroke-width="2.5" filter="url(#textGlow)"/>
+                    <!-- Flask neck -->
+                    <rect x="-8" y="-45" width="16" height="8" fill="none" stroke="url(#labGradient)" stroke-width="2"/>
+                    <!-- Bubbles in flask -->
+                    <circle cx="-8" cy="0" r="3" fill="url(#labGradient)" opacity="0.6"/>
+                    <circle cx="5" cy="-10" r="2" fill="url(#labGradient)" opacity="0.7"/>
+                    <circle cx="8" cy="15" r="2.5" fill="url(#labGradient)" opacity="0.5"/>
+                    <!-- Flask liquid -->
+                    <path d="M -20,15 C -23,25 -20,30 -10,32 L 10,32 C 20,30 23,25 20,15 Z" 
+                          fill="url(#labGradient)" opacity="0.3"/>
+                </g>
+                
+                <!-- Text "Dasgupta" -->
+                <text x="0" y="60" text-anchor="middle" 
+                      font-family="'Segoe UI', 'Arial Black', sans-serif" 
+                      font-size="16" font-weight="bold" 
+                      fill="url(#labGradient)" filter="url(#textGlow)">
+                    DASGUPTA
+                </text>
+                
+                <!-- Text "Lab" -->
+                <text x="0" y="78" text-anchor="middle" 
+                      font-family="'Segoe UI', 'Arial', sans-serif" 
+                      font-size="14" font-weight="normal" 
+                      fill="#ffffff" opacity="0.9">
+                    L A B
+                </text>
+                
+                <!-- Decorative elements -->
+                <circle cx="-45" cy="-30" r="1.5" fill="url(#labGradient)" opacity="0.8">
+                    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="3s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="45" cy="-30" r="1" fill="url(#labGradient)" opacity="0.6">
+                    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="-40" cy="40" r="1.2" fill="url(#labGradient)" opacity="0.7">
+                    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.8s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="40" cy="40" r="0.8" fill="url(#labGradient)" opacity="0.5">
+                    <animate attributeName="opacity" values="0.5;0.1;0.5" dur="3.2s" repeatCount="indefinite"/>
+                </circle>
+            </g>
             
-            <div class="category-card">
-                <div class="category-title">
-                    Amyloid-β
-                    <span class="stats-highlight">Moderate</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 11</div>
-                    <div><strong>Best Inhibitor:</strong> Azeliragon</div>
-                    <div><strong>Best Score:</strong> 92.04%</div>
-                    <div><strong>Worst Performer:</strong> BF 227</div>
-                    <div><strong>Avg DIPG 4:</strong> 3.6%</div>
-                    <div><strong>Avg DIPG 17:</strong> -2.1%</div>
-                </div>
-                <a href="Amyloid_β_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Dopamine Receptor
-                    <span class="stats-highlight">Moderate</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 22</div>
-                    <div><strong>Best Inhibitor:</strong> Benztropine (mesylate)</div>
-                    <div><strong>Best Score:</strong> 82.33%</div>
-                    <div><strong>Worst Performer:</strong> Clozapine N-oxide</div>
-                    <div><strong>Avg DIPG 4:</strong> 3.3%</div>
-                    <div><strong>Avg DIPG 17:</strong> -3.2%</div>
-                </div>
-                <a href="Dopamine_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Endogenous Metabolite
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 20</div>
-                    <div><strong>Best Inhibitor:</strong> Cyclo(his-pro) (TFA)</div>
-                    <div><strong>Best Score:</strong> 60.71%</div>
-                    <div><strong>Worst Performer:</strong> Anserine</div>
-                    <div><strong>Avg DIPG 4:</strong> -2.2%</div>
-                    <div><strong>Avg DIPG 17:</strong> -0.1%</div>
-                </div>
-                <a href="Endogenous_Metabolite_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Others
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 25</div>
-                    <div><strong>Best Inhibitor:</strong> DSP-4 (hydrochloride)</div>
-                    <div><strong>Best Score:</strong> 47.83%</div>
-                    <div><strong>Worst Performer:</strong> Rufinamide</div>
-                    <div><strong>Avg DIPG 4:</strong> -2.3%</div>
-                    <div><strong>Avg DIPG 17:</strong> -1.1%</div>
-                </div>
-                <a href="Others_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Antibiotic
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 50</div>
-                    <div><strong>Best Inhibitor:</strong> Epirubicin (hydrochloride)</div>
-                    <div><strong>Best Score:</strong> 77.51%</div>
-                    <div><strong>Worst Performer:</strong> Levofloxacin</div>
-                    <div><strong>Avg DIPG 4:</strong> 0.3%</div>
-                    <div><strong>Avg DIPG 17:</strong> -3.9%</div>
-                </div>
-                <a href="Antibiotic_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    GABA Receptor
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 15</div>
-                    <div><strong>Best Inhibitor:</strong> PF-06372865</div>
-                    <div><strong>Best Score:</strong> 59.82%</div>
-                    <div><strong>Worst Performer:</strong> Etomidate (hydrochloride)</div>
-                    <div><strong>Avg DIPG 4:</strong> -4.2%</div>
-                    <div><strong>Avg DIPG 17:</strong> -1.1%</div>
-                </div>
-                <a href="GABA_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    nAChR
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 12</div>
-                    <div><strong>Best Inhibitor:</strong> Pancuronium (dibromide)</div>
-                    <div><strong>Best Score:</strong> 51.09%</div>
-                    <div><strong>Worst Performer:</strong> Rocuronium (Bromide)</div>
-                    <div><strong>Avg DIPG 4:</strong> -4.2%</div>
-                    <div><strong>Avg DIPG 17:</strong> -4.0%</div>
-                </div>
-                <a href="nAChR_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    5-HT Receptor
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 68</div>
-                    <div><strong>Best Inhibitor:</strong> Perphenazine</div>
-                    <div><strong>Best Score:</strong> 90.38%</div>
-                    <div><strong>Worst Performer:</strong> Ro60-0175</div>
-                    <div><strong>Avg DIPG 4:</strong> -6.4%</div>
-                    <div><strong>Avg DIPG 17:</strong> -2.1%</div>
-                </div>
-                <a href="5_HT_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Cholinesterase (ChE)
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 14</div>
-                    <div><strong>Best Inhibitor:</strong> Pralidoxime (iodide)</div>
-                    <div><strong>Best Score:</strong> 10.76%</div>
-                    <div><strong>Worst Performer:</strong> AChE/BChE-IN-10</div>
-                    <div><strong>Avg DIPG 4:</strong> -7.0%</div>
-                    <div><strong>Avg DIPG 17:</strong> -2.5%</div>
-                </div>
-                <a href="Cholinesterase_ChE_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    COX
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 20</div>
-                    <div><strong>Best Inhibitor:</strong> Rofecoxib</div>
-                    <div><strong>Best Score:</strong> 26.88%</div>
-                    <div><strong>Worst Performer:</strong> Celecoxib</div>
-                    <div><strong>Avg DIPG 4:</strong> -10.0%</div>
-                    <div><strong>Avg DIPG 17:</strong> -5.9%</div>
-                </div>
-                <a href="COX_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    mAChR
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 30</div>
-                    <div><strong>Best Inhibitor:</strong> VU0119498</div>
-                    <div><strong>Best Score:</strong> 74.12%</div>
-                    <div><strong>Worst Performer:</strong> Deschloroclozapine</div>
-                    <div><strong>Avg DIPG 4:</strong> -8.6%</div>
-                    <div><strong>Avg DIPG 17:</strong> -7.7%</div>
-                </div>
-                <a href="mAChR_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Histamine Receptor
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 8</div>
-                    <div><strong>Best Inhibitor:</strong> INCB38579</div>
-                    <div><strong>Best Score:</strong> 5.50%</div>
-                    <div><strong>Worst Performer:</strong> Bavisant (dihydrochloride hydrate)</div>
-                    <div><strong>Avg DIPG 4:</strong> -11.5%</div>
-                    <div><strong>Avg DIPG 17:</strong> -7.0%</div>
-                </div>
-                <a href="Histamine_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Calcium Channel
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 11</div>
-                    <div><strong>Best Inhibitor:</strong> Acetylcholine (chloride)</div>
-                    <div><strong>Best Score:</strong> 14.61%</div>
-                    <div><strong>Worst Performer:</strong> (2R/S)-6-PNG</div>
-                    <div><strong>Avg DIPG 4:</strong> -10.5%</div>
-                    <div><strong>Avg DIPG 17:</strong> -9.5%</div>
-                </div>
-                <a href="Calcium_Channel_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Adrenergic Receptor
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 8</div>
-                    <div><strong>Best Inhibitor:</strong> Droxidopa</div>
-                    <div><strong>Best Score:</strong> 22.10%</div>
-                    <div><strong>Worst Performer:</strong> Propranolol (hydrochloride)</div>
-                    <div><strong>Avg DIPG 4:</strong> -9.4%</div>
-                    <div><strong>Avg DIPG 17:</strong> -20.9%</div>
-                </div>
-                <a href="Adrenergic_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-title">
-                    Beta-secretase
-                    <span class="stats-highlight">Poor</span>
-                </div>
-                <div class="stats">
-                    <div><strong>Total Drugs:</strong> 8</div>
-                    <div><strong>Best Inhibitor:</strong> LY2886721</div>
-                    <div><strong>Best Score:</strong> 15.29%</div>
-                    <div><strong>Worst Performer:</strong> NB-360</div>
-                    <div><strong>Avg DIPG 4:</strong> -19.6%</div>
-                    <div><strong>Avg DIPG 17:</strong> -11.3%</div>
-                </div>
-                <a href="Beta_secretase_heatmap.html" class="btn">Explore Heatmap</a>
-            </div>
-            
-            </div>
-            
-            <div class="footer">
-                <p>Generated from DIPG drug screening data | Higher values = More effective (more cells killed)</p>
-                <p><strong>Categories Analyzed:</strong> 20 | <strong>Interactive Visualizations Created</strong></p>
-                <p>Data-driven insights for DIPG therapeutic discovery</p>
+            <!-- Floating particles for depth -->
+            <circle cx="300" cy="50" r="2" fill="#ffffff" opacity="0.3">
+                <animate attributeName="cy" values="50;60;50" dur="4s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="400" cy="250" r="1.5" fill="#ffffff" opacity="0.2">
+                <animate attributeName="cy" values="250;240;250" dur="3s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="350" cy="80" r="2.5" fill="#ffffff" opacity="0.25">
+                <animate attributeName="cy" values="80;90;80" dur="5s" repeatCount="indefinite"/>
+            </circle>
+        </svg>
+        
+        <div class="header">
+            <h1>DIPG RESEARCH DATA PORTAL</h1>
+            <p class="subtitle">Advancing Pediatric Brain Cancer Research Through Data Analysis</p>
+            <div class="dropdown-container">
+                <label for="contentSelector">Select Research Data:</label>
+                <select id="contentSelector">
+                    <option value="">-- Choose a drug category --</option>
+                    <option value="1">5-HT Receptor</option>
+                    <option value="2">Adrenergic Receptor</option>
+                    <option value="3">Amyloid β</option>
+                    <option value="4">Antibiotic</option>
+                    <option value="5">Apoptosis</option>
+                    <option value="6">Autophagy</option>
+                    <option value="7">Beta secretase</option>
+                    <option value="8">COX</option>
+                    <option value="9">Calcium Channel</option>
+                    <option value="10">Cholinesterase (ChE)</option>
+                    <option value="11">Dopamine Receptor</option>
+                    <option value="12">EGFR</option>
+                    <option value="13">Endogenous Metabolite</option>
+                    <option value="14">GABA Receptor</option>
+                    <option value="15">Histamine Receptor</option>
+                    <option value="16">mAChR</option>
+                    <option value="17">mGluR</option>
+                    <option value="18">nAChR</option>
+                    <option value="19">Others</option>
+                    <option value="20">Serotonin Transporter</option>
+                </select>
             </div>
         </div>
-    </body>
-    </html>
+        
+        <div class="content-area">
+            <!-- Default message -->
+            <div id="content-default" class="content-item active">
+                <div class="placeholder-content">
+                    <div class="placeholder-icon">📊</div>
+                    <h2>DIPG Drug Efficacy Analysis</h2>
+                    <p>Select a drug category from the dropdown menu above to view interactive heatmaps showing drug effectiveness against DIPG cell lines.</p>
+                    <p><strong>Features:</strong></p>
+                    <ul style="text-align: left; margin-top: 15px;">
+                        <li>Color-coded effectiveness visualization</li>
+                        <li>Interactive tooltips with detailed drug information</li>
+                        <li>Statistical summaries for each category</li>
+                        <li>Comprehensive pathway and target data</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Drug Category Heatmaps -->
+            <div id="content-1" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/5_HT_Receptor_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-2" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Adrenergic_Receptor_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-3" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Amyloid_β_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-4" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Antibiotic_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-5" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Apoptosis_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-6" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Autophagy_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-7" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Beta_secretase_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-8" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/COX_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-9" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Calcium_Channel_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-10" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Cholinesterase_ChE_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-11" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Dopamine_Receptor_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-12" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/EGFR_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-13" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Endogenous_Metabolite_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-14" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/GABA_Receptor_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-15" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Histamine_Receptor_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-16" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/mAChR_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-17" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/mGluR_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-18" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/nAChR_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-19" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Others_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+            
+            <div id="content-20" class="content-item">
+                <iframe src="./dipg_drugs/heatmaps/Serotonin_Transporter_heatmap.html" 
+                        style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>DIPG Research Data Portal - Advancing Pediatric Brain Cancer Research | Emory Medical School & Dasgupta Lab</p>
+        </div>
+    </div>
     
+    <script>
+        // Get the dropdown element
+        const contentSelector = document.getElementById('contentSelector');
+        
+        // Add event listener for dropdown changes
+        contentSelector.addEventListener('change', function() {
+            // Hide all content items
+            const allContent = document.querySelectorAll('.content-item');
+            allContent.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show the selected content
+            const selectedValue = this.value;
+            if (selectedValue === '') {
+                // Show default content if no option selected
+                document.getElementById('content-default').classList.add('active');
+            } else {
+                // Show the selected content
+                const selectedContent = document.getElementById(`content-${selectedValue}`);
+                if (selectedContent) {
+                    selectedContent.classList.add('active');
+                }
+            }
+        });
+        
+        // Optional: Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (document.activeElement === contentSelector) {
+                const currentIndex = contentSelector.selectedIndex;
+                const optionsCount = contentSelector.options.length;
+                
+                if (e.key === 'ArrowRight' && currentIndex < optionsCount - 1) {
+                    contentSelector.selectedIndex = currentIndex + 1;
+                    contentSelector.dispatchEvent(new Event('change'));
+                } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                    contentSelector.selectedIndex = currentIndex - 1;
+                    contentSelector.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+        
+        // Optional: URL parameter support
+        // This allows linking directly to a specific option
+        const urlParams = new URLSearchParams(window.location.search);
+        const optionParam = urlParams.get('option');
+        if (optionParam && optionParam >= 1 && optionParam <= 20) {
+            contentSelector.value = optionParam;
+            contentSelector.dispatchEvent(new Event('change'));
+        }
+    </script>
+</body>
+</html>
