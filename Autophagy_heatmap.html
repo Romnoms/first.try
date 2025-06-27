@@ -1,0 +1,702 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Autophagy - DIPG Cell Inhibition Heatmap</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { 
+                font-family: Verdana, Arial, sans-serif; 
+                margin: 0; 
+                background: #F5F5F5;
+                min-height: 100vh;
+                padding: 20px;
+                color: #000000;
+                line-height: 1.4;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0 auto;
+                background: #FFFFFF;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                overflow: hidden;
+                border: 1px solid #CCCCCC;
+            }
+            .header { 
+                text-align: center; 
+                padding: 30px 20px; 
+                background: #E8E8E8;
+                color: #000000;
+                border-bottom: 2px solid #CCCCCC;
+            }
+            .header h1 {
+                font-size: 2.2em;
+                margin-bottom: 10px;
+                font-weight: bold;
+                color: #000000;
+            }
+            .header p {
+                font-size: 1.1em;
+                color: #333333;
+                font-weight: normal;
+            }
+            .stats { 
+                display: grid; 
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+                gap: 20px; 
+                padding: 30px; 
+                background: #F8F8F8;
+            }
+            .stat-card { 
+                background: #FFFFFF; 
+                padding: 20px; 
+                border-radius: 8px; 
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                text-align: center;
+                border: 1px solid #DDDDDD;
+            }
+            .stat-card h3 {
+                color: #000000;
+                margin-bottom: 10px;
+                font-size: 1.1em;
+                font-weight: bold;
+            }
+            .stat-card p {
+                color: #000000;
+                font-size: 1.2em;
+                font-weight: normal;
+            }
+            .stat-card small {
+                color: #333333;
+                font-size: 0.9em;
+            }
+            .heatmap-container { 
+                overflow-x: auto; 
+                padding: 30px;
+                background: #FFFFFF;
+            }
+            .heatmap { 
+                display: grid; 
+                grid-template-columns: 300px repeat(2, 120px); 
+                gap: 2px; 
+                min-width: 600px;
+                margin: 0 auto;
+            }
+            .header-cell {
+                padding: 15px 10px; 
+                font-weight: bold; 
+                text-align: center;
+                background: #DDDDDD;
+                color: #000000;
+                border: 1px solid #AAAAAA;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1em;
+            }
+            .drug-label { 
+                padding: 8px 15px; 
+                font-size: 13px; 
+                font-weight: bold;
+                text-align: left;
+                background: #E0E0E0;
+                color: #000000;
+                border: 1px solid #AAAAAA;
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .heatmap-cell { 
+                padding: 12px 8px; 
+                text-align: center; 
+                font-size: 12px; 
+                font-weight: bold;
+                color: #000000;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 1px solid #888888;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+            }
+            .heatmap-cell:hover { 
+                transform: scale(1.1); 
+                z-index: 10;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                border: 2px solid #000000;
+            }
+            .legend { 
+                margin: 30px; 
+                padding: 25px; 
+                background: #FFFFFF;
+                border: 1px solid #CCCCCC;
+                border-radius: 8px;
+            }
+            .legend h3 {
+                color: #000000;
+                margin-bottom: 15px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .color-scale { 
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+                height: 50px; 
+                margin: 15px 0;
+                border: 1px solid #888888;
+            }
+            .color-scale div { 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                color: #000000;
+                text-align: center;
+                padding: 5px;
+                border: 1px solid #666666;
+            }
+            .tooltip {
+                position: absolute;
+                background: #FFFFFF;
+                color: #000000;
+                padding: 15px;
+                border: 2px solid #333333;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                z-index: 1000;
+                display: none;
+                max-width: 300px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            }
+            .back-button {
+                display: inline-block;
+                margin: 20px 30px;
+                padding: 12px 24px;
+                background: #DDDDDD;
+                color: #000000;
+                text-decoration: none;
+                border: 1px solid #AAAAAA;
+                border-radius: 4px;
+                font-weight: bold;
+                font-family: Verdana, Arial, sans-serif;
+            }
+            .back-button:hover {
+                background: #CCCCCC;
+                border-color: #888888;
+            }
+            .interpretation {
+                background: #F0F0F0;
+                color: #000000;
+                padding: 20px;
+                margin: 0;
+                text-align: center;
+                border-bottom: 1px solid #CCCCCC;
+            }
+            .interpretation p {
+                font-size: 1.1em;
+                margin: 5px 0;
+                color: #000000;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Autophagy</h1>
+                <p>DIPG Cell Inhibition Analysis</p>
+                <p><strong>Drug Efficacy Heatmap</strong></p>
+            </div>
+            
+            <div class="interpretation">
+                <p><strong>Interpretation:</strong> Higher values = Better inhibition (more cells killed)</p>
+                <p>Warm colors (Orange/Red) = High cell inhibition (effective) | Cool colors (Blue) = Cell growth/low inhibition (ineffective)</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Drugs</h3>
+                    <p>57</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Best Inhibitor</h3>
+                    <p>Flavopiridol (Hydrochloride)<br><small>Score: 91.92</small></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Worst Performer</h3>
+                    <p>Irinotecan<br><small>Score: -52.63</small></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Inhibition</h3>
+                    <p>DIPG 4: 16.3%<br>DIPG 17: 16.2%</p>
+                </div>
+            </div>
+            
+            <div class="heatmap-container">
+                <div class="heatmap">
+                    <!-- Header row -->
+                    <div class="header-cell">Drug Name</div>
+                    <div class="header-cell">DIPG 4</div>
+                    <div class="header-cell">DIPG 17</div>
+    <div class="drug-label" title="Flavopiridol (Hydrochloride)">Flavopiridol (Hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Flavopiridol (Hydrochloride): DIPG 4 = 91.29% inhibition"
+                           onclick="showTooltip(event, 'Flavopiridol (Hydrochloride)', 'DIPG 4', 91.29, 'Autophagy; CDK; HIV', 'Anti-infection; Autophagy; Cell Cycle/DNA Damage')">91.3%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Flavopiridol (Hydrochloride): DIPG 17 = 92.55% inhibition"
+                           onclick="showTooltip(event, 'Flavopiridol (Hydrochloride)', 'DIPG 17', 92.55, 'Autophagy; CDK; HIV', 'Anti-infection; Autophagy; Cell Cycle/DNA Damage')">92.5%</div>
+<div class="drug-label" title="Vinorelbine (ditartrate)">Vinorelbine (ditartrate)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Vinorelbine (ditartrate): DIPG 4 = 90.98% inhibition"
+                           onclick="showTooltip(event, 'Vinorelbine (ditartrate)', 'DIPG 4', 90.98, 'Autophagy; Microtubule/Tubulin', 'Autophagy; Cell Cycle/DNA Damage; Cytoskeleton')">91.0%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Vinorelbine (ditartrate): DIPG 17 = 92.06% inhibition"
+                           onclick="showTooltip(event, 'Vinorelbine (ditartrate)', 'DIPG 17', 92.06, 'Autophagy; Microtubule/Tubulin', 'Autophagy; Cell Cycle/DNA Damage; Cytoskeleton')">92.1%</div>
+<div class="drug-label" title="Paroxetine (hydrochloride)">Paroxetine (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Paroxetine (hydrochloride): DIPG 4 = 91.98% inhibition"
+                           onclick="showTooltip(event, 'Paroxetine (hydrochloride)', 'DIPG 4', 91.98, 'Autophagy; Serotonin Transporter', 'Autophagy; Neuronal Signaling')">92.0%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Paroxetine (hydrochloride): DIPG 17 = 90.56% inhibition"
+                           onclick="showTooltip(event, 'Paroxetine (hydrochloride)', 'DIPG 17', 90.56, 'Autophagy; Serotonin Transporter', 'Autophagy; Neuronal Signaling')">90.6%</div>
+<div class="drug-label" title="Pazopanib (Hydrochloride)">Pazopanib (Hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Pazopanib (Hydrochloride): DIPG 4 = 86.88% inhibition"
+                           onclick="showTooltip(event, 'Pazopanib (Hydrochloride)', 'DIPG 4', 86.88, 'Autophagy; c-Fms; c-Kit; FGFR; PDGFR; VEGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">86.9%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Pazopanib (Hydrochloride): DIPG 17 = 85.56% inhibition"
+                           onclick="showTooltip(event, 'Pazopanib (Hydrochloride)', 'DIPG 17', 85.56, 'Autophagy; c-Fms; c-Kit; FGFR; PDGFR; VEGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">85.6%</div>
+<div class="drug-label" title="Obatoclax (Mesylate)">Obatoclax (Mesylate)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Obatoclax (Mesylate): DIPG 4 = 84.35% inhibition"
+                           onclick="showTooltip(event, 'Obatoclax (Mesylate)', 'DIPG 4', 84.35, 'Autophagy; Bcl-2 Family; Parasite', 'Anti-infection; Apoptosis; Autophagy')">84.4%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Obatoclax (Mesylate): DIPG 17 = 87.78% inhibition"
+                           onclick="showTooltip(event, 'Obatoclax (Mesylate)', 'DIPG 17', 87.78, 'Autophagy; Bcl-2 Family; Parasite', 'Anti-infection; Apoptosis; Autophagy')">87.8%</div>
+<div class="drug-label" title="URMC-099">URMC-099</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="URMC-099: DIPG 4 = 81.39% inhibition"
+                           onclick="showTooltip(event, 'URMC-099', 'DIPG 4', 81.39, 'Autophagy; Mixed Lineage Kinase', 'Autophagy; MAPK/ERK Pathway')">81.4%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="URMC-099: DIPG 17 = 78.95% inhibition"
+                           onclick="showTooltip(event, 'URMC-099', 'DIPG 17', 78.95, 'Autophagy; Mixed Lineage Kinase', 'Autophagy; MAPK/ERK Pathway')">78.9%</div>
+<div class="drug-label" title="Cediranib">Cediranib</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Cediranib: DIPG 4 = 75.04% inhibition"
+                           onclick="showTooltip(event, 'Cediranib', 'DIPG 4', 75.04, 'Autophagy; PDGFR; VEGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">75.0%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Cediranib: DIPG 17 = 76.47% inhibition"
+                           onclick="showTooltip(event, 'Cediranib', 'DIPG 17', 76.47, 'Autophagy; PDGFR; VEGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">76.5%</div>
+<div class="drug-label" title="Mefloquine (hydrochloride)">Mefloquine (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Mefloquine (hydrochloride): DIPG 4 = 77.66% inhibition"
+                           onclick="showTooltip(event, 'Mefloquine (hydrochloride)', 'DIPG 4', 77.66, 'Autophagy; Parasite; Potassium Channel; ROS Kinase; SARS-CoV', 'Anti-infection; Autophagy; Membrane Transporter/Ion Channel; Protein Tyrosine Kinase/RTK')">77.7%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Mefloquine (hydrochloride): DIPG 17 = 73.29% inhibition"
+                           onclick="showTooltip(event, 'Mefloquine (hydrochloride)', 'DIPG 17', 73.29, 'Autophagy; Parasite; Potassium Channel; ROS Kinase; SARS-CoV', 'Anti-infection; Autophagy; Membrane Transporter/Ion Channel; Protein Tyrosine Kinase/RTK')">73.3%</div>
+<div class="drug-label" title="Imatinib (Mesylate)">Imatinib (Mesylate)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Imatinib (Mesylate): DIPG 4 = 69.65% inhibition"
+                           onclick="showTooltip(event, 'Imatinib (Mesylate)', 'DIPG 4', 69.65, 'Autophagy; Bcr-Abl; c-Kit; PDGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">69.6%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Imatinib (Mesylate): DIPG 17 = 72.25% inhibition"
+                           onclick="showTooltip(event, 'Imatinib (Mesylate)', 'DIPG 17', 72.25, 'Autophagy; Bcr-Abl; c-Kit; PDGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">72.3%</div>
+<div class="drug-label" title="L-779450">L-779450</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="L-779450: DIPG 4 = 60.58% inhibition"
+                           onclick="showTooltip(event, 'L-779450', 'DIPG 4', 60.58, 'Autophagy; Raf', 'Autophagy; MAPK/ERK Pathway')">60.6%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="L-779450: DIPG 17 = 67.96% inhibition"
+                           onclick="showTooltip(event, 'L-779450', 'DIPG 17', 67.96, 'Autophagy; Raf', 'Autophagy; MAPK/ERK Pathway')">68.0%</div>
+<div class="drug-label" title="Vinblastine (sulfate)">Vinblastine (sulfate)</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Vinblastine (sulfate): DIPG 4 = 57.70% inhibition"
+                           onclick="showTooltip(event, 'Vinblastine (sulfate)', 'DIPG 4', 57.70, 'Autophagy; Microtubule/Tubulin', 'Autophagy; Cell Cycle/DNA Damage; Cytoskeleton')">57.7%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Vinblastine (sulfate): DIPG 17 = 64.44% inhibition"
+                           onclick="showTooltip(event, 'Vinblastine (sulfate)', 'DIPG 17', 64.44, 'Autophagy; Microtubule/Tubulin', 'Autophagy; Cell Cycle/DNA Damage; Cytoskeleton')">64.4%</div>
+<div class="drug-label" title="Cabazitaxel">Cabazitaxel</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Cabazitaxel: DIPG 4 = 58.77% inhibition"
+                           onclick="showTooltip(event, 'Cabazitaxel', 'DIPG 4', 58.77, 'Autophagy; Microtubule/Tubulin', 'Autophagy; Cell Cycle/DNA Damage; Cytoskeleton')">58.8%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Cabazitaxel: DIPG 17 = 60.92% inhibition"
+                           onclick="showTooltip(event, 'Cabazitaxel', 'DIPG 17', 60.92, 'Autophagy; Microtubule/Tubulin', 'Autophagy; Cell Cycle/DNA Damage; Cytoskeleton')">60.9%</div>
+<div class="drug-label" title="Nortriptyline (hydrochloride)">Nortriptyline (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Nortriptyline (hydrochloride): DIPG 4 = 46.83% inhibition"
+                           onclick="showTooltip(event, 'Nortriptyline (hydrochloride)', 'DIPG 4', 46.83, 'Autophagy; Drug Metabolite', 'Autophagy; Metabolic Enzyme/Protease')">46.8%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Nortriptyline (hydrochloride): DIPG 17 = 60.15% inhibition"
+                           onclick="showTooltip(event, 'Nortriptyline (hydrochloride)', 'DIPG 17', 60.15, 'Autophagy; Drug Metabolite', 'Autophagy; Metabolic Enzyme/Protease')">60.1%</div>
+<div class="drug-label" title="(+)-JQ-1">(+)-JQ-1</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="(+)-JQ-1: DIPG 4 = 63.28% inhibition"
+                           onclick="showTooltip(event, '(+)-JQ-1', 'DIPG 4', 63.28, 'Autophagy; Epigenetic Reader Domain; Ligands for Target Protein for PROTAC', 'Autophagy; Epigenetics; PROTAC')">63.3%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="(+)-JQ-1: DIPG 17 = 42.07% inhibition"
+                           onclick="showTooltip(event, '(+)-JQ-1', 'DIPG 17', 42.07, 'Autophagy; Epigenetic Reader Domain; Ligands for Target Protein for PROTAC', 'Autophagy; Epigenetics; PROTAC')">42.1%</div>
+<div class="drug-label" title="Erlotinib">Erlotinib</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Erlotinib: DIPG 4 = 26.47% inhibition"
+                           onclick="showTooltip(event, 'Erlotinib', 'DIPG 4', 26.47, 'Autophagy; EGFR', 'Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">26.5%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Erlotinib: DIPG 17 = 63.50% inhibition"
+                           onclick="showTooltip(event, 'Erlotinib', 'DIPG 17', 63.50, 'Autophagy; EGFR', 'Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">63.5%</div>
+<div class="drug-label" title="Erlotinib (Hydrochloride)">Erlotinib (Hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Erlotinib (Hydrochloride): DIPG 4 = 37.17% inhibition"
+                           onclick="showTooltip(event, 'Erlotinib (Hydrochloride)', 'DIPG 4', 37.17, 'Autophagy; EGFR', 'Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">37.2%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Erlotinib (Hydrochloride): DIPG 17 = 36.51% inhibition"
+                           onclick="showTooltip(event, 'Erlotinib (Hydrochloride)', 'DIPG 17', 36.51, 'Autophagy; EGFR', 'Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">36.5%</div>
+<div class="drug-label" title="BI-D1870">BI-D1870</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="BI-D1870: DIPG 4 = 33.69% inhibition"
+                           onclick="showTooltip(event, 'BI-D1870', 'DIPG 4', 33.69, 'Autophagy; Ribosomal S6 Kinase (RSK)', 'Autophagy; MAPK/ERK Pathway')">33.7%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="BI-D1870: DIPG 17 = 36.55% inhibition"
+                           onclick="showTooltip(event, 'BI-D1870', 'DIPG 17', 36.55, 'Autophagy; Ribosomal S6 Kinase (RSK)', 'Autophagy; MAPK/ERK Pathway')">36.6%</div>
+<div class="drug-label" title="VER-155008">VER-155008</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="VER-155008: DIPG 4 = 27.98% inhibition"
+                           onclick="showTooltip(event, 'VER-155008', 'DIPG 4', 27.98, 'Autophagy; HSP', 'Autophagy; Cell Cycle/DNA Damage; Metabolic Enzyme/Protease')">28.0%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="VER-155008: DIPG 17 = 22.00% inhibition"
+                           onclick="showTooltip(event, 'VER-155008', 'DIPG 17', 22.00, 'Autophagy; HSP', 'Autophagy; Cell Cycle/DNA Damage; Metabolic Enzyme/Protease')">22.0%</div>
+<div class="drug-label" title="Nimodipine">Nimodipine</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Nimodipine: DIPG 4 = 14.07% inhibition"
+                           onclick="showTooltip(event, 'Nimodipine', 'DIPG 4', 14.07, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">14.1%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Nimodipine: DIPG 17 = 35.77% inhibition"
+                           onclick="showTooltip(event, 'Nimodipine', 'DIPG 17', 35.77, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">35.8%</div>
+<div class="drug-label" title="Olaparib">Olaparib</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Olaparib: DIPG 4 = 18.49% inhibition"
+                           onclick="showTooltip(event, 'Olaparib', 'DIPG 4', 18.49, 'Autophagy; Mitophagy; PARP', 'Autophagy; Cell Cycle/DNA Damage; Epigenetics')">18.5%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Olaparib: DIPG 17 = 24.06% inhibition"
+                           onclick="showTooltip(event, 'Olaparib', 'DIPG 17', 24.06, 'Autophagy; Mitophagy; PARP', 'Autophagy; Cell Cycle/DNA Damage; Epigenetics')">24.1%</div>
+<div class="drug-label" title="SB 239063">SB 239063</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="SB 239063: DIPG 4 = 17.82% inhibition"
+                           onclick="showTooltip(event, 'SB 239063', 'DIPG 4', 17.82, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">17.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="SB 239063: DIPG 17 = 15.61% inhibition"
+                           onclick="showTooltip(event, 'SB 239063', 'DIPG 17', 15.61, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">15.6%</div>
+<div class="drug-label" title="URB-597">URB-597</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="URB-597: DIPG 4 = 23.94% inhibition"
+                           onclick="showTooltip(event, 'URB-597', 'DIPG 4', 23.94, 'Autophagy; FAAH; Mitophagy', 'Autophagy; Metabolic Enzyme/Protease; Neuronal Signaling')">23.9%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="URB-597: DIPG 17 = 1.11% inhibition"
+                           onclick="showTooltip(event, 'URB-597', 'DIPG 17', 1.11, 'Autophagy; FAAH; Mitophagy', 'Autophagy; Metabolic Enzyme/Protease; Neuronal Signaling')">1.1%</div>
+<div class="drug-label" title="Ferulic acid methyl ester">Ferulic acid methyl ester</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Ferulic acid methyl ester: DIPG 4 = 13.51% inhibition"
+                           onclick="showTooltip(event, 'Ferulic acid methyl ester', 'DIPG 4', 13.51, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">13.5%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Ferulic acid methyl ester: DIPG 17 = 11.16% inhibition"
+                           onclick="showTooltip(event, 'Ferulic acid methyl ester', 'DIPG 17', 11.16, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">11.2%</div>
+<div class="drug-label" title="Pazopanib">Pazopanib</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pazopanib: DIPG 4 = 8.89% inhibition"
+                           onclick="showTooltip(event, 'Pazopanib', 'DIPG 4', 8.89, 'Autophagy; c-Kit; FGFR; PDGFR; VEGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">8.9%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pazopanib: DIPG 17 = 14.82% inhibition"
+                           onclick="showTooltip(event, 'Pazopanib', 'DIPG 17', 14.82, 'Autophagy; c-Kit; FGFR; PDGFR; VEGFR', 'Autophagy; Protein Tyrosine Kinase/RTK')">14.8%</div>
+<div class="drug-label" title="Naproxen">Naproxen</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Naproxen: DIPG 4 = 14.29% inhibition"
+                           onclick="showTooltip(event, 'Naproxen', 'DIPG 4', 14.29, 'Autophagy; COX', 'Autophagy; Immunology/Inflammation')">14.3%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Naproxen: DIPG 17 = 9.41% inhibition"
+                           onclick="showTooltip(event, 'Naproxen', 'DIPG 17', 9.41, 'Autophagy; COX', 'Autophagy; Immunology/Inflammation')">9.4%</div>
+<div class="drug-label" title="Isradipine">Isradipine</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Isradipine: DIPG 4 = 14.72% inhibition"
+                           onclick="showTooltip(event, 'Isradipine', 'DIPG 4', 14.72, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">14.7%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Isradipine: DIPG 17 = 4.62% inhibition"
+                           onclick="showTooltip(event, 'Isradipine', 'DIPG 17', 4.62, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">4.6%</div>
+<div class="drug-label" title="Methylprednisolone">Methylprednisolone</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Methylprednisolone: DIPG 4 = 11.69% inhibition"
+                           onclick="showTooltip(event, 'Methylprednisolone', 'DIPG 4', 11.69, 'Autophagy; Bacterial; Glucocorticoid Receptor; SARS-CoV', 'Anti-infection; Autophagy; Immunology/Inflammation; Vitamin D Related/Nuclear Receptor')">11.7%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Methylprednisolone: DIPG 17 = 5.45% inhibition"
+                           onclick="showTooltip(event, 'Methylprednisolone', 'DIPG 17', 5.45, 'Autophagy; Bacterial; Glucocorticoid Receptor; SARS-CoV', 'Anti-infection; Autophagy; Immunology/Inflammation; Vitamin D Related/Nuclear Receptor')">5.5%</div>
+<div class="drug-label" title="Lapatinib">Lapatinib</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Lapatinib: DIPG 4 = 12.02% inhibition"
+                           onclick="showTooltip(event, 'Lapatinib', 'DIPG 4', 12.02, 'Autophagy; EGFR; Ferroptosis', 'Apoptosis; Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">12.0%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Lapatinib: DIPG 17 = 5.09% inhibition"
+                           onclick="showTooltip(event, 'Lapatinib', 'DIPG 17', 5.09, 'Autophagy; EGFR; Ferroptosis', 'Apoptosis; Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">5.1%</div>
+<div class="drug-label" title="Irinotecan (hydrochloride trihydrate)">Irinotecan (hydrochloride trihydrat...</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Irinotecan (hydrochloride trihydrate): DIPG 4 = 22.12% inhibition"
+                           onclick="showTooltip(event, 'Irinotecan (hydrochloride trihydrate)', 'DIPG 4', 22.12, 'Autophagy; Topoisomerase', 'Autophagy; Cell Cycle/DNA Damage')">22.1%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Irinotecan (hydrochloride trihydrate): DIPG 17 = -7.59% inhibition"
+                           onclick="showTooltip(event, 'Irinotecan (hydrochloride trihydrate)', 'DIPG 17', -7.59, 'Autophagy; Topoisomerase', 'Autophagy; Cell Cycle/DNA Damage')">-7.6%</div>
+<div class="drug-label" title="Retinoic acid">Retinoic acid</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Retinoic acid: DIPG 4 = 2.30% inhibition"
+                           onclick="showTooltip(event, 'Retinoic acid', 'DIPG 4', 2.30, 'Autophagy; Endogenous Metabolite; PPAR; RAR/RXR', 'Autophagy; Cell Cycle/DNA Damage; Metabolic Enzyme/Protease; Vitamin D Related/Nuclear Receptor')">2.3%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Retinoic acid: DIPG 17 = 9.39% inhibition"
+                           onclick="showTooltip(event, 'Retinoic acid', 'DIPG 17', 9.39, 'Autophagy; Endogenous Metabolite; PPAR; RAR/RXR', 'Autophagy; Cell Cycle/DNA Damage; Metabolic Enzyme/Protease; Vitamin D Related/Nuclear Receptor')">9.4%</div>
+<div class="drug-label" title="Dimethyl fumarate">Dimethyl fumarate</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Dimethyl fumarate: DIPG 4 = 13.75% inhibition"
+                           onclick="showTooltip(event, 'Dimethyl fumarate', 'DIPG 4', 13.75, 'Autophagy; Endogenous Metabolite; HIV; Keap1-Nrf2; Reactive Oxygen Species', 'Anti-infection; Autophagy; Immunology/Inflammation; Metabolic Enzyme/Protease; NF-κB')">13.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Dimethyl fumarate: DIPG 17 = -2.56% inhibition"
+                           onclick="showTooltip(event, 'Dimethyl fumarate', 'DIPG 17', -2.56, 'Autophagy; Endogenous Metabolite; HIV; Keap1-Nrf2; Reactive Oxygen Species', 'Anti-infection; Autophagy; Immunology/Inflammation; Metabolic Enzyme/Protease; NF-κB')">-2.6%</div>
+<div class="drug-label" title="Felodipine">Felodipine</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Felodipine: DIPG 4 = 7.38% inhibition"
+                           onclick="showTooltip(event, 'Felodipine', 'DIPG 4', 7.38, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">7.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Felodipine: DIPG 17 = 3.28% inhibition"
+                           onclick="showTooltip(event, 'Felodipine', 'DIPG 17', 3.28, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">3.3%</div>
+<div class="drug-label" title="Dantrolene (sodium hemiheptahydrate)">Dantrolene (sodium hemiheptahydrate...</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Dantrolene (sodium hemiheptahydrate): DIPG 4 = 13.06% inhibition"
+                           onclick="showTooltip(event, 'Dantrolene (sodium hemiheptahydrate)', 'DIPG 4', 13.06, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">13.1%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Dantrolene (sodium hemiheptahydrate): DIPG 17 = -6.33% inhibition"
+                           onclick="showTooltip(event, 'Dantrolene (sodium hemiheptahydrate)', 'DIPG 17', -6.33, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">-6.3%</div>
+<div class="drug-label" title="6-Mercaptopurine">6-Mercaptopurine</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="6-Mercaptopurine: DIPG 4 = 0.78% inhibition"
+                           onclick="showTooltip(event, '6-Mercaptopurine', 'DIPG 4', 0.78, 'Autophagy; Endogenous Metabolite; Nucleoside Antimetabolite/Analog', 'Autophagy; Cell Cycle/DNA Damage; Metabolic Enzyme/Protease')">0.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="6-Mercaptopurine: DIPG 17 = 2.06% inhibition"
+                           onclick="showTooltip(event, '6-Mercaptopurine', 'DIPG 17', 2.06, 'Autophagy; Endogenous Metabolite; Nucleoside Antimetabolite/Analog', 'Autophagy; Cell Cycle/DNA Damage; Metabolic Enzyme/Protease')">2.1%</div>
+<div class="drug-label" title="Naproxen (sodium)">Naproxen (sodium)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Naproxen (sodium): DIPG 4 = 5.44% inhibition"
+                           onclick="showTooltip(event, 'Naproxen (sodium)', 'DIPG 4', 5.44, 'Autophagy; COX', 'Autophagy; Immunology/Inflammation')">5.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Naproxen (sodium): DIPG 17 = -6.36% inhibition"
+                           onclick="showTooltip(event, 'Naproxen (sodium)', 'DIPG 17', -6.36, 'Autophagy; COX', 'Autophagy; Immunology/Inflammation')">-6.4%</div>
+<div class="drug-label" title="Pregnenolone monosulfate (sodium)">Pregnenolone monosulfate (sodium)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pregnenolone monosulfate (sodium): DIPG 4 = -1.72% inhibition"
+                           onclick="showTooltip(event, 'Pregnenolone monosulfate (sodium)', 'DIPG 4', -1.72, 'Autophagy; Cannabinoid Receptor; Endogenous Metabolite; TRP Channel', 'Autophagy; GPCR/G Protein; Membrane Transporter/Ion Channel; Metabolic Enzyme/Protease; Neuronal Signaling')">-1.7%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pregnenolone monosulfate (sodium): DIPG 17 = -1.59% inhibition"
+                           onclick="showTooltip(event, 'Pregnenolone monosulfate (sodium)', 'DIPG 17', -1.59, 'Autophagy; Cannabinoid Receptor; Endogenous Metabolite; TRP Channel', 'Autophagy; GPCR/G Protein; Membrane Transporter/Ion Channel; Metabolic Enzyme/Protease; Neuronal Signaling')">-1.6%</div>
+<div class="drug-label" title="Lonafarnib">Lonafarnib</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Lonafarnib: DIPG 4 = 8.98% inhibition"
+                           onclick="showTooltip(event, 'Lonafarnib', 'DIPG 4', 8.98, 'Autophagy; Farnesyl Transferase; Ras', 'Autophagy; GPCR/G Protein; Metabolic Enzyme/Protease')">9.0%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Lonafarnib: DIPG 17 = -16.64% inhibition"
+                           onclick="showTooltip(event, 'Lonafarnib', 'DIPG 17', -16.64, 'Autophagy; Farnesyl Transferase; Ras', 'Autophagy; GPCR/G Protein; Metabolic Enzyme/Protease')">-16.6%</div>
+<div class="drug-label" title="Resatorvid">Resatorvid</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Resatorvid: DIPG 4 = 0.44% inhibition"
+                           onclick="showTooltip(event, 'Resatorvid', 'DIPG 4', 0.44, 'Autophagy; Interleukin Related; TNF Receptor; Toll-like Receptor (TLR)', 'Apoptosis; Autophagy; Immunology/Inflammation')">0.4%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Resatorvid: DIPG 17 = -8.71% inhibition"
+                           onclick="showTooltip(event, 'Resatorvid', 'DIPG 17', -8.71, 'Autophagy; Interleukin Related; TNF Receptor; Toll-like Receptor (TLR)', 'Apoptosis; Autophagy; Immunology/Inflammation')">-8.7%</div>
+<div class="drug-label" title="Pregnenolone">Pregnenolone</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pregnenolone: DIPG 4 = -2.97% inhibition"
+                           onclick="showTooltip(event, 'Pregnenolone', 'DIPG 4', -2.97, 'Autophagy; Cannabinoid Receptor; Endogenous Metabolite; TRP Channel', 'Autophagy; GPCR/G Protein; Membrane Transporter/Ion Channel; Metabolic Enzyme/Protease; Neuronal Signaling')">-3.0%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pregnenolone: DIPG 17 = -6.38% inhibition"
+                           onclick="showTooltip(event, 'Pregnenolone', 'DIPG 17', -6.38, 'Autophagy; Cannabinoid Receptor; Endogenous Metabolite; TRP Channel', 'Autophagy; GPCR/G Protein; Membrane Transporter/Ion Channel; Metabolic Enzyme/Protease; Neuronal Signaling')">-6.4%</div>
+<div class="drug-label" title="MW-150">MW-150</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="MW-150: DIPG 4 = -5.08% inhibition"
+                           onclick="showTooltip(event, 'MW-150', 'DIPG 4', -5.08, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">-5.1%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="MW-150: DIPG 17 = -6.19% inhibition"
+                           onclick="showTooltip(event, 'MW-150', 'DIPG 17', -6.19, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">-6.2%</div>
+<div class="drug-label" title="Lapatinib (ditosylate)">Lapatinib (ditosylate)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Lapatinib (ditosylate): DIPG 4 = -19.29% inhibition"
+                           onclick="showTooltip(event, 'Lapatinib (ditosylate)', 'DIPG 4', -19.29, 'Autophagy; EGFR; Ferroptosis', 'Apoptosis; Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">-19.3%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Lapatinib (ditosylate): DIPG 17 = 6.16% inhibition"
+                           onclick="showTooltip(event, 'Lapatinib (ditosylate)', 'DIPG 17', 6.16, 'Autophagy; EGFR; Ferroptosis', 'Apoptosis; Autophagy; JAK/STAT Signaling; Protein Tyrosine Kinase/RTK')">6.2%</div>
+<div class="drug-label" title="Carbamazepine">Carbamazepine</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Carbamazepine: DIPG 4 = -7.15% inhibition"
+                           onclick="showTooltip(event, 'Carbamazepine', 'DIPG 4', -7.15, 'Autophagy; Mitophagy; Sodium Channel', 'Autophagy; Membrane Transporter/Ion Channel')">-7.2%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Carbamazepine: DIPG 17 = -11.92% inhibition"
+                           onclick="showTooltip(event, 'Carbamazepine', 'DIPG 17', -11.92, 'Autophagy; Mitophagy; Sodium Channel', 'Autophagy; Membrane Transporter/Ion Channel')">-11.9%</div>
+<div class="drug-label" title="Tarenflurbil">Tarenflurbil</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Tarenflurbil: DIPG 4 = 5.37% inhibition"
+                           onclick="showTooltip(event, 'Tarenflurbil', 'DIPG 4', 5.37, 'Autophagy; RAR/RXR', 'Autophagy; Metabolic Enzyme/Protease; Vitamin D Related/Nuclear Receptor')">5.4%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Tarenflurbil: DIPG 17 = -32.13% inhibition"
+                           onclick="showTooltip(event, 'Tarenflurbil', 'DIPG 17', -32.13, 'Autophagy; RAR/RXR', 'Autophagy; Metabolic Enzyme/Protease; Vitamin D Related/Nuclear Receptor')">-32.1%</div>
+<div class="drug-label" title="Cisatracurium (besylate)">Cisatracurium (besylate)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Cisatracurium (besylate): DIPG 4 = -31.43% inhibition"
+                           onclick="showTooltip(event, 'Cisatracurium (besylate)', 'DIPG 4', -31.43, 'Autophagy; nAChR', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">-31.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Cisatracurium (besylate): DIPG 17 = 4.00% inhibition"
+                           onclick="showTooltip(event, 'Cisatracurium (besylate)', 'DIPG 17', 4.00, 'Autophagy; nAChR', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">4.0%</div>
+<div class="drug-label" title="Citalopram (hydrobromide)">Citalopram (hydrobromide)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Citalopram (hydrobromide): DIPG 4 = -21.01% inhibition"
+                           onclick="showTooltip(event, 'Citalopram (hydrobromide)', 'DIPG 4', -21.01, 'Autophagy; Serotonin Transporter', 'Autophagy; Neuronal Signaling')">-21.0%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Citalopram (hydrobromide): DIPG 17 = -8.23% inhibition"
+                           onclick="showTooltip(event, 'Citalopram (hydrobromide)', 'DIPG 17', -8.23, 'Autophagy; Serotonin Transporter', 'Autophagy; Neuronal Signaling')">-8.2%</div>
+<div class="drug-label" title="Glibenclamide">Glibenclamide</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Glibenclamide: DIPG 4 = -15.67% inhibition"
+                           onclick="showTooltip(event, 'Glibenclamide', 'DIPG 4', -15.67, 'Autophagy; CFTR; Mitochondrial Metabolism; P-glycoprotein; Potassium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Metabolic Enzyme/Protease')">-15.7%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Glibenclamide: DIPG 17 = -18.74% inhibition"
+                           onclick="showTooltip(event, 'Glibenclamide', 'DIPG 17', -18.74, 'Autophagy; CFTR; Mitochondrial Metabolism; P-glycoprotein; Potassium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Metabolic Enzyme/Protease')">-18.7%</div>
+<div class="drug-label" title="Veliparib">Veliparib</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Veliparib: DIPG 4 = -27.20% inhibition"
+                           onclick="showTooltip(event, 'Veliparib', 'DIPG 4', -27.20, 'Autophagy; PARP', 'Autophagy; Cell Cycle/DNA Damage; Epigenetics')">-27.2%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Veliparib: DIPG 17 = -10.45% inhibition"
+                           onclick="showTooltip(event, 'Veliparib', 'DIPG 17', -10.45, 'Autophagy; PARP', 'Autophagy; Cell Cycle/DNA Damage; Epigenetics')">-10.4%</div>
+<div class="drug-label" title="Acetazolamide">Acetazolamide</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Acetazolamide: DIPG 4 = -23.47% inhibition"
+                           onclick="showTooltip(event, 'Acetazolamide', 'DIPG 4', -23.47, 'Autophagy; Bacterial; Carbonic Anhydrase', 'Anti-infection; Autophagy; Metabolic Enzyme/Protease')">-23.5%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Acetazolamide: DIPG 17 = -18.88% inhibition"
+                           onclick="showTooltip(event, 'Acetazolamide', 'DIPG 17', -18.88, 'Autophagy; Bacterial; Carbonic Anhydrase', 'Anti-infection; Autophagy; Metabolic Enzyme/Protease')">-18.9%</div>
+<div class="drug-label" title="Vismodegib">Vismodegib</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Vismodegib: DIPG 4 = -26.96% inhibition"
+                           onclick="showTooltip(event, 'Vismodegib', 'DIPG 4', -26.96, 'Autophagy; Hedgehog', 'Autophagy; Stem Cell/Wnt')">-27.0%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Vismodegib: DIPG 17 = -17.11% inhibition"
+                           onclick="showTooltip(event, 'Vismodegib', 'DIPG 17', -17.11, 'Autophagy; Hedgehog', 'Autophagy; Stem Cell/Wnt')">-17.1%</div>
+<div class="drug-label" title="Necrostatin-1">Necrostatin-1</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Necrostatin-1: DIPG 4 = -21.65% inhibition"
+                           onclick="showTooltip(event, 'Necrostatin-1', 'DIPG 4', -21.65, 'Autophagy; Ferroptosis; Indoleamine 2,3-Dioxygenase (IDO); RIP kinase', 'Apoptosis; Autophagy; Metabolic Enzyme/Protease')">-21.6%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Necrostatin-1: DIPG 17 = -22.60% inhibition"
+                           onclick="showTooltip(event, 'Necrostatin-1', 'DIPG 17', -22.60, 'Autophagy; Ferroptosis; Indoleamine 2,3-Dioxygenase (IDO); RIP kinase', 'Apoptosis; Autophagy; Metabolic Enzyme/Protease')">-22.6%</div>
+<div class="drug-label" title="Efavirenz">Efavirenz</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Efavirenz: DIPG 4 = -18.43% inhibition"
+                           onclick="showTooltip(event, 'Efavirenz', 'DIPG 4', -18.43, 'Autophagy; Endogenous Metabolite; HIV; Parasite; Reverse Transcriptase', 'Anti-infection; Autophagy; Metabolic Enzyme/Protease')">-18.4%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Efavirenz: DIPG 17 = -28.32% inhibition"
+                           onclick="showTooltip(event, 'Efavirenz', 'DIPG 17', -28.32, 'Autophagy; Endogenous Metabolite; HIV; Parasite; Reverse Transcriptase', 'Anti-infection; Autophagy; Metabolic Enzyme/Protease')">-28.3%</div>
+<div class="drug-label" title="Neflamapimod">Neflamapimod</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Neflamapimod: DIPG 4 = -27.04% inhibition"
+                           onclick="showTooltip(event, 'Neflamapimod', 'DIPG 4', -27.04, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">-27.0%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Neflamapimod: DIPG 17 = -19.73% inhibition"
+                           onclick="showTooltip(event, 'Neflamapimod', 'DIPG 17', -19.73, 'Autophagy; p38 MAPK', 'Autophagy; MAPK/ERK Pathway')">-19.7%</div>
+<div class="drug-label" title="Nicardipine (hydrochloride)">Nicardipine (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Nicardipine (hydrochloride): DIPG 4 = -34.81% inhibition"
+                           onclick="showTooltip(event, 'Nicardipine (hydrochloride)', 'DIPG 4', -34.81, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">-34.8%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Nicardipine (hydrochloride): DIPG 17 = -16.99% inhibition"
+                           onclick="showTooltip(event, 'Nicardipine (hydrochloride)', 'DIPG 17', -16.99, 'Autophagy; Calcium Channel', 'Autophagy; Membrane Transporter/Ion Channel; Neuronal Signaling')">-17.0%</div>
+<div class="drug-label" title="Atorvastatin (hemicalcium salt)">Atorvastatin (hemicalcium salt)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Atorvastatin (hemicalcium salt): DIPG 4 = -38.16% inhibition"
+                           onclick="showTooltip(event, 'Atorvastatin (hemicalcium salt)', 'DIPG 4', -38.16, 'Autophagy; Ferroptosis; HMG-CoA Reductase (HMGCR)', 'Apoptosis; Autophagy; Metabolic Enzyme/Protease')">-38.2%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Atorvastatin (hemicalcium salt): DIPG 17 = -32.04% inhibition"
+                           onclick="showTooltip(event, 'Atorvastatin (hemicalcium salt)', 'DIPG 17', -32.04, 'Autophagy; Ferroptosis; HMG-CoA Reductase (HMGCR)', 'Apoptosis; Autophagy; Metabolic Enzyme/Protease')">-32.0%</div>
+<div class="drug-label" title="Lamotrigine">Lamotrigine</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Lamotrigine: DIPG 4 = -23.71% inhibition"
+                           onclick="showTooltip(event, 'Lamotrigine', 'DIPG 4', -23.71, 'Autophagy; Sodium Channel', 'Autophagy; Membrane Transporter/Ion Channel')">-23.7%</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Lamotrigine: DIPG 17 = -53.28% inhibition"
+                           onclick="showTooltip(event, 'Lamotrigine', 'DIPG 17', -53.28, 'Autophagy; Sodium Channel', 'Autophagy; Membrane Transporter/Ion Channel')">-53.3%</div>
+<div class="drug-label" title="Lovastatin">Lovastatin</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Lovastatin: DIPG 4 = -75.60% inhibition"
+                           onclick="showTooltip(event, 'Lovastatin', 'DIPG 4', -75.60, 'Autophagy; Ferroptosis; HMG-CoA Reductase (HMGCR)', 'Apoptosis; Autophagy; Metabolic Enzyme/Protease')">-75.6%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Lovastatin: DIPG 17 = -18.77% inhibition"
+                           onclick="showTooltip(event, 'Lovastatin', 'DIPG 17', -18.77, 'Autophagy; Ferroptosis; HMG-CoA Reductase (HMGCR)', 'Apoptosis; Autophagy; Metabolic Enzyme/Protease')">-18.8%</div>
+<div class="drug-label" title="Irinotecan">Irinotecan</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Irinotecan: DIPG 4 = -41.93% inhibition"
+                           onclick="showTooltip(event, 'Irinotecan', 'DIPG 4', -41.93, 'Autophagy; Topoisomerase', 'Autophagy; Cell Cycle/DNA Damage')">-41.9%</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Irinotecan: DIPG 17 = -63.33% inhibition"
+                           onclick="showTooltip(event, 'Irinotecan', 'DIPG 17', -63.33, 'Autophagy; Topoisomerase', 'Autophagy; Cell Cycle/DNA Damage')">-63.3%</div>
+
+                </div>
+            </div>
+            
+            <div class="legend">
+                <h3>Cell Inhibition Scale (Colorblind-Friendly)</h3>
+                <div class="color-scale">
+                    <div style="background-color: #D73027;">Excellent<br>(> 58.9%)</div>
+                    <div style="background-color: #F46D43;">Good<br>(25.3 - 58.9%)</div>
+                    <div style="background-color: #FDAE61;">Moderate<br>(-8.3 - 25.3%)</div>
+                    <div style="background-color: #FEE08B;">Poor<br>(-42.0 - -8.3%)</div>
+                    <div style="background-color: #3288BD;">Growth<br>(< -42.0%)</div>
+                </div>
+                <p style="text-align: center; margin-top: 15px; color: #000000;">
+                    <strong>Note:</strong> Positive values indicate cell inhibition (good), negative values indicate cell growth (bad).
+                    <br>Click on cells for detailed drug information.
+                </p>
+            </div>
+            
+            <a href="index.html" class="back-button">← Back to Dashboard</a>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+        
+        <script>
+            function showTooltip(event, drugName, cellLine, score, targets, pathways) {
+                const tooltip = document.getElementById('tooltip');
+                const inhibitionText = score >= 0 ? `${score.toFixed(1)}% inhibition` : `${Math.abs(score).toFixed(1)}% growth`;
+                const effectivenessText = score >= 0 ? 'Effective' : 'Ineffective';
+                
+                tooltip.innerHTML = `
+                    <strong>${drugName}</strong><br>
+                    <strong>Cell Line:</strong> ${cellLine}<br>
+                    <strong>Result:</strong> ${inhibitionText} (${effectivenessText})<br>
+                    <strong>Targets:</strong> ${targets}<br>
+                    <strong>Pathways:</strong> ${pathways}
+                `;
+                tooltip.style.left = event.pageX + 15 + 'px';
+                tooltip.style.top = event.pageY + 15 + 'px';
+                tooltip.style.display = 'block';
+                
+                setTimeout(() => {
+                    tooltip.style.display = 'none';
+                }, 8000);
+            }
+            
+            document.addEventListener('click', function(event) {
+                if (!event.target.classList.contains('heatmap-cell')) {
+                    document.getElementById('tooltip').style.display = 'none';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    

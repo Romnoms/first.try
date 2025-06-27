@@ -1,0 +1,513 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>mAChR - DIPG Cell Inhibition Heatmap</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { 
+                font-family: Verdana, Arial, sans-serif; 
+                margin: 0; 
+                background: #F5F5F5;
+                min-height: 100vh;
+                padding: 20px;
+                color: #000000;
+                line-height: 1.4;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0 auto;
+                background: #FFFFFF;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                overflow: hidden;
+                border: 1px solid #CCCCCC;
+            }
+            .header { 
+                text-align: center; 
+                padding: 30px 20px; 
+                background: #E8E8E8;
+                color: #000000;
+                border-bottom: 2px solid #CCCCCC;
+            }
+            .header h1 {
+                font-size: 2.2em;
+                margin-bottom: 10px;
+                font-weight: bold;
+                color: #000000;
+            }
+            .header p {
+                font-size: 1.1em;
+                color: #333333;
+                font-weight: normal;
+            }
+            .stats { 
+                display: grid; 
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+                gap: 20px; 
+                padding: 30px; 
+                background: #F8F8F8;
+            }
+            .stat-card { 
+                background: #FFFFFF; 
+                padding: 20px; 
+                border-radius: 8px; 
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                text-align: center;
+                border: 1px solid #DDDDDD;
+            }
+            .stat-card h3 {
+                color: #000000;
+                margin-bottom: 10px;
+                font-size: 1.1em;
+                font-weight: bold;
+            }
+            .stat-card p {
+                color: #000000;
+                font-size: 1.2em;
+                font-weight: normal;
+            }
+            .stat-card small {
+                color: #333333;
+                font-size: 0.9em;
+            }
+            .heatmap-container { 
+                overflow-x: auto; 
+                padding: 30px;
+                background: #FFFFFF;
+            }
+            .heatmap { 
+                display: grid; 
+                grid-template-columns: 300px repeat(2, 120px); 
+                gap: 2px; 
+                min-width: 600px;
+                margin: 0 auto;
+            }
+            .header-cell {
+                padding: 15px 10px; 
+                font-weight: bold; 
+                text-align: center;
+                background: #DDDDDD;
+                color: #000000;
+                border: 1px solid #AAAAAA;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1em;
+            }
+            .drug-label { 
+                padding: 8px 15px; 
+                font-size: 13px; 
+                font-weight: bold;
+                text-align: left;
+                background: #E0E0E0;
+                color: #000000;
+                border: 1px solid #AAAAAA;
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .heatmap-cell { 
+                padding: 12px 8px; 
+                text-align: center; 
+                font-size: 12px; 
+                font-weight: bold;
+                color: #000000;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 1px solid #888888;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+            }
+            .heatmap-cell:hover { 
+                transform: scale(1.1); 
+                z-index: 10;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                border: 2px solid #000000;
+            }
+            .legend { 
+                margin: 30px; 
+                padding: 25px; 
+                background: #FFFFFF;
+                border: 1px solid #CCCCCC;
+                border-radius: 8px;
+            }
+            .legend h3 {
+                color: #000000;
+                margin-bottom: 15px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .color-scale { 
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+                height: 50px; 
+                margin: 15px 0;
+                border: 1px solid #888888;
+            }
+            .color-scale div { 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                color: #000000;
+                text-align: center;
+                padding: 5px;
+                border: 1px solid #666666;
+            }
+            .tooltip {
+                position: absolute;
+                background: #FFFFFF;
+                color: #000000;
+                padding: 15px;
+                border: 2px solid #333333;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                z-index: 1000;
+                display: none;
+                max-width: 300px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            }
+            .back-button {
+                display: inline-block;
+                margin: 20px 30px;
+                padding: 12px 24px;
+                background: #DDDDDD;
+                color: #000000;
+                text-decoration: none;
+                border: 1px solid #AAAAAA;
+                border-radius: 4px;
+                font-weight: bold;
+                font-family: Verdana, Arial, sans-serif;
+            }
+            .back-button:hover {
+                background: #CCCCCC;
+                border-color: #888888;
+            }
+            .interpretation {
+                background: #F0F0F0;
+                color: #000000;
+                padding: 20px;
+                margin: 0;
+                text-align: center;
+                border-bottom: 1px solid #CCCCCC;
+            }
+            .interpretation p {
+                font-size: 1.1em;
+                margin: 5px 0;
+                color: #000000;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>mAChR</h1>
+                <p>DIPG Cell Inhibition Analysis</p>
+                <p><strong>Drug Efficacy Heatmap</strong></p>
+            </div>
+            
+            <div class="interpretation">
+                <p><strong>Interpretation:</strong> Higher values = Better inhibition (more cells killed)</p>
+                <p>Warm colors (Orange/Red) = High cell inhibition (effective) | Cool colors (Blue) = Cell growth/low inhibition (ineffective)</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Drugs</h3>
+                    <p>30</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Best Inhibitor</h3>
+                    <p>VU0119498<br><small>Score: 74.12</small></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Worst Performer</h3>
+                    <p>Deschloroclozapine<br><small>Score: -66.01</small></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Inhibition</h3>
+                    <p>DIPG 4: -8.6%<br>DIPG 17: -7.7%</p>
+                </div>
+            </div>
+            
+            <div class="heatmap-container">
+                <div class="heatmap">
+                    <!-- Header row -->
+                    <div class="header-cell">Drug Name</div>
+                    <div class="header-cell">DIPG 4</div>
+                    <div class="header-cell">DIPG 17</div>
+    <div class="drug-label" title="VU0119498">VU0119498</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="VU0119498: DIPG 4 = 72.25% inhibition"
+                           onclick="showTooltip(event, 'VU0119498', 'DIPG 4', 72.25, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">72.2%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="VU0119498: DIPG 17 = 75.99% inhibition"
+                           onclick="showTooltip(event, 'VU0119498', 'DIPG 17', 75.99, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">76.0%</div>
+<div class="drug-label" title="Solifenacin (Succinate)">Solifenacin (Succinate)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Solifenacin (Succinate): DIPG 4 = 54.09% inhibition"
+                           onclick="showTooltip(event, 'Solifenacin (Succinate)', 'DIPG 4', 54.09, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">54.1%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Solifenacin (Succinate): DIPG 17 = 49.67% inhibition"
+                           onclick="showTooltip(event, 'Solifenacin (Succinate)', 'DIPG 17', 49.67, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">49.7%</div>
+<div class="drug-label" title="VU 6008667">VU 6008667</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="VU 6008667: DIPG 4 = 40.92% inhibition"
+                           onclick="showTooltip(event, 'VU 6008667', 'DIPG 4', 40.92, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">40.9%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="VU 6008667: DIPG 17 = 38.29% inhibition"
+                           onclick="showTooltip(event, 'VU 6008667', 'DIPG 17', 38.29, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">38.3%</div>
+<div class="drug-label" title="Solifenacin">Solifenacin</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Solifenacin: DIPG 4 = 35.93% inhibition"
+                           onclick="showTooltip(event, 'Solifenacin', 'DIPG 4', 35.93, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">35.9%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Solifenacin: DIPG 17 = 35.99% inhibition"
+                           onclick="showTooltip(event, 'Solifenacin', 'DIPG 17', 35.99, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">36.0%</div>
+<div class="drug-label" title="Solifenacin (hydrochloride)">Solifenacin (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Solifenacin (hydrochloride): DIPG 4 = 38.36% inhibition"
+                           onclick="showTooltip(event, 'Solifenacin (hydrochloride)', 'DIPG 4', 38.36, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">38.4%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Solifenacin (hydrochloride): DIPG 17 = 31.40% inhibition"
+                           onclick="showTooltip(event, 'Solifenacin (hydrochloride)', 'DIPG 17', 31.40, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">31.4%</div>
+<div class="drug-label" title="Aclidinium (Bromide)">Aclidinium (Bromide)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Aclidinium (Bromide): DIPG 4 = -9.34% inhibition"
+                           onclick="showTooltip(event, 'Aclidinium (Bromide)', 'DIPG 4', -9.34, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-9.3%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Aclidinium (Bromide): DIPG 17 = 28.73% inhibition"
+                           onclick="showTooltip(event, 'Aclidinium (Bromide)', 'DIPG 17', 28.73, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">28.7%</div>
+<div class="drug-label" title="Cevimeline (hydrochloride hemihydrate)">Cevimeline (hydrochloride hemihydra...</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Cevimeline (hydrochloride hemihydrate): DIPG 4 = 11.44% inhibition"
+                           onclick="showTooltip(event, 'Cevimeline (hydrochloride hemihydrate)', 'DIPG 4', 11.44, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">11.4%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Cevimeline (hydrochloride hemihydrate): DIPG 17 = 0.49% inhibition"
+                           onclick="showTooltip(event, 'Cevimeline (hydrochloride hemihydrate)', 'DIPG 17', 0.49, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">0.5%</div>
+<div class="drug-label" title="MK-6884">MK-6884</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="MK-6884: DIPG 4 = 8.35% inhibition"
+                           onclick="showTooltip(event, 'MK-6884', 'DIPG 4', 8.35, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">8.3%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="MK-6884: DIPG 17 = -6.74% inhibition"
+                           onclick="showTooltip(event, 'MK-6884', 'DIPG 17', -6.74, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-6.7%</div>
+<div class="drug-label" title="JHU37152">JHU37152</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="JHU37152: DIPG 4 = -6.58% inhibition"
+                           onclick="showTooltip(event, 'JHU37152', 'DIPG 4', -6.58, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-6.6%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="JHU37152: DIPG 17 = 6.57% inhibition"
+                           onclick="showTooltip(event, 'JHU37152', 'DIPG 17', 6.57, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">6.6%</div>
+<div class="drug-label" title="ML380">ML380</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="ML380: DIPG 4 = 4.02% inhibition"
+                           onclick="showTooltip(event, 'ML380', 'DIPG 4', 4.02, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">4.0%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="ML380: DIPG 17 = -7.25% inhibition"
+                           onclick="showTooltip(event, 'ML380', 'DIPG 17', -7.25, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-7.2%</div>
+<div class="drug-label" title="Oxybutynin (chloride)">Oxybutynin (chloride)</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Oxybutynin (chloride): DIPG 4 = -2.54% inhibition"
+                           onclick="showTooltip(event, 'Oxybutynin (chloride)', 'DIPG 4', -2.54, 'mAChR; Potassium Channel', 'GPCR/G Protein; Membrane Transporter/Ion Channel; Neuronal Signaling')">-2.5%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Oxybutynin (chloride): DIPG 17 = -3.16% inhibition"
+                           onclick="showTooltip(event, 'Oxybutynin (chloride)', 'DIPG 17', -3.16, 'mAChR; Potassium Channel', 'GPCR/G Protein; Membrane Transporter/Ion Channel; Neuronal Signaling')">-3.2%</div>
+<div class="drug-label" title="Bethanechol (chloride)">Bethanechol (chloride)</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Bethanechol (chloride): DIPG 4 = 4.68% inhibition"
+                           onclick="showTooltip(event, 'Bethanechol (chloride)', 'DIPG 4', 4.68, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">4.7%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Bethanechol (chloride): DIPG 17 = -13.69% inhibition"
+                           onclick="showTooltip(event, 'Bethanechol (chloride)', 'DIPG 17', -13.69, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-13.7%</div>
+<div class="drug-label" title="Diphenidol (hydrochloride)">Diphenidol (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Diphenidol (hydrochloride): DIPG 4 = -3.93% inhibition"
+                           onclick="showTooltip(event, 'Diphenidol (hydrochloride)', 'DIPG 4', -3.93, 'mAChR; Sodium Channel', 'GPCR/G Protein; Membrane Transporter/Ion Channel; Neuronal Signaling')">-3.9%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Diphenidol (hydrochloride): DIPG 17 = -8.39% inhibition"
+                           onclick="showTooltip(event, 'Diphenidol (hydrochloride)', 'DIPG 17', -8.39, 'mAChR; Sodium Channel', 'GPCR/G Protein; Membrane Transporter/Ion Channel; Neuronal Signaling')">-8.4%</div>
+<div class="drug-label" title="Propantheline (bromide)">Propantheline (bromide)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Propantheline (bromide): DIPG 4 = -9.49% inhibition"
+                           onclick="showTooltip(event, 'Propantheline (bromide)', 'DIPG 4', -9.49, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-9.5%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Propantheline (bromide): DIPG 17 = -8.13% inhibition"
+                           onclick="showTooltip(event, 'Propantheline (bromide)', 'DIPG 17', -8.13, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-8.1%</div>
+<div class="drug-label" title="Atropine (sulfate monohydrate)">Atropine (sulfate monohydrate)</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Atropine (sulfate monohydrate): DIPG 4 = 2.38% inhibition"
+                           onclick="showTooltip(event, 'Atropine (sulfate monohydrate)', 'DIPG 4', 2.38, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">2.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Atropine (sulfate monohydrate): DIPG 17 = -28.15% inhibition"
+                           onclick="showTooltip(event, 'Atropine (sulfate monohydrate)', 'DIPG 17', -28.15, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-28.2%</div>
+<div class="drug-label" title="Tolterodine">Tolterodine</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Tolterodine: DIPG 4 = -14.18% inhibition"
+                           onclick="showTooltip(event, 'Tolterodine', 'DIPG 4', -14.18, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-14.2%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Tolterodine: DIPG 17 = -14.54% inhibition"
+                           onclick="showTooltip(event, 'Tolterodine', 'DIPG 17', -14.54, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-14.5%</div>
+<div class="drug-label" title="Tolterodine (tartrate)">Tolterodine (tartrate)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Tolterodine (tartrate): DIPG 4 = -33.81% inhibition"
+                           onclick="showTooltip(event, 'Tolterodine (tartrate)', 'DIPG 4', -33.81, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-33.8%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Tolterodine (tartrate): DIPG 17 = 1.69% inhibition"
+                           onclick="showTooltip(event, 'Tolterodine (tartrate)', 'DIPG 17', 1.69, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">1.7%</div>
+<div class="drug-label" title="VU6019650">VU6019650</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="VU6019650: DIPG 4 = -13.82% inhibition"
+                           onclick="showTooltip(event, 'VU6019650', 'DIPG 4', -13.82, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-13.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="VU6019650: DIPG 17 = -18.99% inhibition"
+                           onclick="showTooltip(event, 'VU6019650', 'DIPG 17', -18.99, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-19.0%</div>
+<div class="drug-label" title="Trospium (chloride)">Trospium (chloride)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Trospium (chloride): DIPG 4 = -31.92% inhibition"
+                           onclick="showTooltip(event, 'Trospium (chloride)', 'DIPG 4', -31.92, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-31.9%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Trospium (chloride): DIPG 17 = -4.90% inhibition"
+                           onclick="showTooltip(event, 'Trospium (chloride)', 'DIPG 17', -4.90, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-4.9%</div>
+<div class="drug-label" title="Oxybutynin">Oxybutynin</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Oxybutynin: DIPG 4 = -14.99% inhibition"
+                           onclick="showTooltip(event, 'Oxybutynin', 'DIPG 4', -14.99, 'mAChR; Potassium Channel', 'GPCR/G Protein; Membrane Transporter/Ion Channel; Neuronal Signaling')">-15.0%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Oxybutynin: DIPG 17 = -25.40% inhibition"
+                           onclick="showTooltip(event, 'Oxybutynin', 'DIPG 17', -25.40, 'mAChR; Potassium Channel', 'GPCR/G Protein; Membrane Transporter/Ion Channel; Neuronal Signaling')">-25.4%</div>
+<div class="drug-label" title="JHU37160">JHU37160</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="JHU37160: DIPG 4 = -19.43% inhibition"
+                           onclick="showTooltip(event, 'JHU37160', 'DIPG 4', -19.43, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-19.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="JHU37160: DIPG 17 = -27.20% inhibition"
+                           onclick="showTooltip(event, 'JHU37160', 'DIPG 17', -27.20, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-27.2%</div>
+<div class="drug-label" title="VU0357017 (hydrochloride)">VU0357017 (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="VU0357017 (hydrochloride): DIPG 4 = -33.44% inhibition"
+                           onclick="showTooltip(event, 'VU0357017 (hydrochloride)', 'DIPG 4', -33.44, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-33.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="VU0357017 (hydrochloride): DIPG 17 = -15.69% inhibition"
+                           onclick="showTooltip(event, 'VU0357017 (hydrochloride)', 'DIPG 17', -15.69, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-15.7%</div>
+<div class="drug-label" title="BQCA">BQCA</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="BQCA: DIPG 4 = -7.78% inhibition"
+                           onclick="showTooltip(event, 'BQCA', 'DIPG 4', -7.78, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-7.8%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="BQCA: DIPG 17 = -43.41% inhibition"
+                           onclick="showTooltip(event, 'BQCA', 'DIPG 17', -43.41, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-43.4%</div>
+<div class="drug-label" title="Glycopyrrolate">Glycopyrrolate</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Glycopyrrolate: DIPG 4 = -27.72% inhibition"
+                           onclick="showTooltip(event, 'Glycopyrrolate', 'DIPG 4', -27.72, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-27.7%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Glycopyrrolate: DIPG 17 = -34.11% inhibition"
+                           onclick="showTooltip(event, 'Glycopyrrolate', 'DIPG 17', -34.11, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-34.1%</div>
+<div class="drug-label" title="Fesoterodine (fumarate)">Fesoterodine (fumarate)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Fesoterodine (fumarate): DIPG 4 = -30.33% inhibition"
+                           onclick="showTooltip(event, 'Fesoterodine (fumarate)', 'DIPG 4', -30.33, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-30.3%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Fesoterodine (fumarate): DIPG 17 = -32.72% inhibition"
+                           onclick="showTooltip(event, 'Fesoterodine (fumarate)', 'DIPG 17', -32.72, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-32.7%</div>
+<div class="drug-label" title="Pirenzepine (dihydrochloride)">Pirenzepine (dihydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Pirenzepine (dihydrochloride): DIPG 4 = -27.39% inhibition"
+                           onclick="showTooltip(event, 'Pirenzepine (dihydrochloride)', 'DIPG 4', -27.39, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-27.4%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Pirenzepine (dihydrochloride): DIPG 17 = -43.74% inhibition"
+                           onclick="showTooltip(event, 'Pirenzepine (dihydrochloride)', 'DIPG 17', -43.74, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-43.7%</div>
+<div class="drug-label" title="Diphenmanil (methylsulfate)">Diphenmanil (methylsulfate)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Diphenmanil (methylsulfate): DIPG 4 = -16.16% inhibition"
+                           onclick="showTooltip(event, 'Diphenmanil (methylsulfate)', 'DIPG 4', -16.16, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-16.2%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Diphenmanil (methylsulfate): DIPG 17 = -58.72% inhibition"
+                           onclick="showTooltip(event, 'Diphenmanil (methylsulfate)', 'DIPG 17', -58.72, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-58.7%</div>
+<div class="drug-label" title="VU0152100">VU0152100</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="VU0152100: DIPG 4 = -40.37% inhibition"
+                           onclick="showTooltip(event, 'VU0152100', 'DIPG 4', -40.37, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-40.4%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="VU0152100: DIPG 17 = -49.07% inhibition"
+                           onclick="showTooltip(event, 'VU0152100', 'DIPG 17', -49.07, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-49.1%</div>
+<div class="drug-label" title="Cevimeline (hydrochloride)">Cevimeline (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Cevimeline (hydrochloride): DIPG 4 = -67.04% inhibition"
+                           onclick="showTooltip(event, 'Cevimeline (hydrochloride)', 'DIPG 4', -67.04, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-67.0%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Cevimeline (hydrochloride): DIPG 17 = -45.96% inhibition"
+                           onclick="showTooltip(event, 'Cevimeline (hydrochloride)', 'DIPG 17', -45.96, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-46.0%</div>
+<div class="drug-label" title="Deschloroclozapine">Deschloroclozapine</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Deschloroclozapine: DIPG 4 = -121.36% inhibition"
+                           onclick="showTooltip(event, 'Deschloroclozapine', 'DIPG 4', -121.36, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-121.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Deschloroclozapine: DIPG 17 = -10.67% inhibition"
+                           onclick="showTooltip(event, 'Deschloroclozapine', 'DIPG 17', -10.67, 'mAChR', 'GPCR/G Protein; Neuronal Signaling')">-10.7%</div>
+
+                </div>
+            </div>
+            
+            <div class="legend">
+                <h3>Cell Inhibition Scale (Colorblind-Friendly)</h3>
+                <div class="color-scale">
+                    <div style="background-color: #D73027;">Excellent<br>(> 36.5%)</div>
+                    <div style="background-color: #F46D43;">Good<br>(-2.9 - 36.5%)</div>
+                    <div style="background-color: #FDAE61;">Moderate<br>(-42.4 - -2.9%)</div>
+                    <div style="background-color: #FEE08B;">Poor<br>(-81.9 - -42.4%)</div>
+                    <div style="background-color: #3288BD;">Growth<br>(< -81.9%)</div>
+                </div>
+                <p style="text-align: center; margin-top: 15px; color: #000000;">
+                    <strong>Note:</strong> Positive values indicate cell inhibition (good), negative values indicate cell growth (bad).
+                    <br>Click on cells for detailed drug information.
+                </p>
+            </div>
+            
+            <a href="index.html" class="back-button">← Back to Dashboard</a>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+        
+        <script>
+            function showTooltip(event, drugName, cellLine, score, targets, pathways) {
+                const tooltip = document.getElementById('tooltip');
+                const inhibitionText = score >= 0 ? `${score.toFixed(1)}% inhibition` : `${Math.abs(score).toFixed(1)}% growth`;
+                const effectivenessText = score >= 0 ? 'Effective' : 'Ineffective';
+                
+                tooltip.innerHTML = `
+                    <strong>${drugName}</strong><br>
+                    <strong>Cell Line:</strong> ${cellLine}<br>
+                    <strong>Result:</strong> ${inhibitionText} (${effectivenessText})<br>
+                    <strong>Targets:</strong> ${targets}<br>
+                    <strong>Pathways:</strong> ${pathways}
+                `;
+                tooltip.style.left = event.pageX + 15 + 'px';
+                tooltip.style.top = event.pageY + 15 + 'px';
+                tooltip.style.display = 'block';
+                
+                setTimeout(() => {
+                    tooltip.style.display = 'none';
+                }, 8000);
+            }
+            
+            document.addEventListener('click', function(event) {
+                if (!event.target.classList.contains('heatmap-cell')) {
+                    document.getElementById('tooltip').style.display = 'none';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    

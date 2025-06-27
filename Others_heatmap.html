@@ -1,0 +1,478 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Others - DIPG Cell Inhibition Heatmap</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { 
+                font-family: Verdana, Arial, sans-serif; 
+                margin: 0; 
+                background: #F5F5F5;
+                min-height: 100vh;
+                padding: 20px;
+                color: #000000;
+                line-height: 1.4;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0 auto;
+                background: #FFFFFF;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                overflow: hidden;
+                border: 1px solid #CCCCCC;
+            }
+            .header { 
+                text-align: center; 
+                padding: 30px 20px; 
+                background: #E8E8E8;
+                color: #000000;
+                border-bottom: 2px solid #CCCCCC;
+            }
+            .header h1 {
+                font-size: 2.2em;
+                margin-bottom: 10px;
+                font-weight: bold;
+                color: #000000;
+            }
+            .header p {
+                font-size: 1.1em;
+                color: #333333;
+                font-weight: normal;
+            }
+            .stats { 
+                display: grid; 
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+                gap: 20px; 
+                padding: 30px; 
+                background: #F8F8F8;
+            }
+            .stat-card { 
+                background: #FFFFFF; 
+                padding: 20px; 
+                border-radius: 8px; 
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                text-align: center;
+                border: 1px solid #DDDDDD;
+            }
+            .stat-card h3 {
+                color: #000000;
+                margin-bottom: 10px;
+                font-size: 1.1em;
+                font-weight: bold;
+            }
+            .stat-card p {
+                color: #000000;
+                font-size: 1.2em;
+                font-weight: normal;
+            }
+            .stat-card small {
+                color: #333333;
+                font-size: 0.9em;
+            }
+            .heatmap-container { 
+                overflow-x: auto; 
+                padding: 30px;
+                background: #FFFFFF;
+            }
+            .heatmap { 
+                display: grid; 
+                grid-template-columns: 300px repeat(2, 120px); 
+                gap: 2px; 
+                min-width: 600px;
+                margin: 0 auto;
+            }
+            .header-cell {
+                padding: 15px 10px; 
+                font-weight: bold; 
+                text-align: center;
+                background: #DDDDDD;
+                color: #000000;
+                border: 1px solid #AAAAAA;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1em;
+            }
+            .drug-label { 
+                padding: 8px 15px; 
+                font-size: 13px; 
+                font-weight: bold;
+                text-align: left;
+                background: #E0E0E0;
+                color: #000000;
+                border: 1px solid #AAAAAA;
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .heatmap-cell { 
+                padding: 12px 8px; 
+                text-align: center; 
+                font-size: 12px; 
+                font-weight: bold;
+                color: #000000;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 1px solid #888888;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+            }
+            .heatmap-cell:hover { 
+                transform: scale(1.1); 
+                z-index: 10;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                border: 2px solid #000000;
+            }
+            .legend { 
+                margin: 30px; 
+                padding: 25px; 
+                background: #FFFFFF;
+                border: 1px solid #CCCCCC;
+                border-radius: 8px;
+            }
+            .legend h3 {
+                color: #000000;
+                margin-bottom: 15px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .color-scale { 
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+                height: 50px; 
+                margin: 15px 0;
+                border: 1px solid #888888;
+            }
+            .color-scale div { 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                color: #000000;
+                text-align: center;
+                padding: 5px;
+                border: 1px solid #666666;
+            }
+            .tooltip {
+                position: absolute;
+                background: #FFFFFF;
+                color: #000000;
+                padding: 15px;
+                border: 2px solid #333333;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                z-index: 1000;
+                display: none;
+                max-width: 300px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            }
+            .back-button {
+                display: inline-block;
+                margin: 20px 30px;
+                padding: 12px 24px;
+                background: #DDDDDD;
+                color: #000000;
+                text-decoration: none;
+                border: 1px solid #AAAAAA;
+                border-radius: 4px;
+                font-weight: bold;
+                font-family: Verdana, Arial, sans-serif;
+            }
+            .back-button:hover {
+                background: #CCCCCC;
+                border-color: #888888;
+            }
+            .interpretation {
+                background: #F0F0F0;
+                color: #000000;
+                padding: 20px;
+                margin: 0;
+                text-align: center;
+                border-bottom: 1px solid #CCCCCC;
+            }
+            .interpretation p {
+                font-size: 1.1em;
+                margin: 5px 0;
+                color: #000000;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Others</h1>
+                <p>DIPG Cell Inhibition Analysis</p>
+                <p><strong>Drug Efficacy Heatmap</strong></p>
+            </div>
+            
+            <div class="interpretation">
+                <p><strong>Interpretation:</strong> Higher values = Better inhibition (more cells killed)</p>
+                <p>Warm colors (Orange/Red) = High cell inhibition (effective) | Cool colors (Blue) = Cell growth/low inhibition (ineffective)</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Drugs</h3>
+                    <p>25</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Best Inhibitor</h3>
+                    <p>DSP-4 (hydrochloride)<br><small>Score: 47.83</small></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Worst Performer</h3>
+                    <p>Rufinamide<br><small>Score: -33.84</small></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Inhibition</h3>
+                    <p>DIPG 4: -2.3%<br>DIPG 17: -1.1%</p>
+                </div>
+            </div>
+            
+            <div class="heatmap-container">
+                <div class="heatmap">
+                    <!-- Header row -->
+                    <div class="header-cell">Drug Name</div>
+                    <div class="header-cell">DIPG 4</div>
+                    <div class="header-cell">DIPG 17</div>
+    <div class="drug-label" title="DSP-4 (hydrochloride)">DSP-4 (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="DSP-4 (hydrochloride): DIPG 4 = 44.14% inhibition"
+                           onclick="showTooltip(event, 'DSP-4 (hydrochloride)', 'DIPG 4', 44.14, 'Others', 'Others')">44.1%</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="DSP-4 (hydrochloride): DIPG 17 = 51.52% inhibition"
+                           onclick="showTooltip(event, 'DSP-4 (hydrochloride)', 'DIPG 17', 51.52, 'Others', 'Others')">51.5%</div>
+<div class="drug-label" title="Amoxapine">Amoxapine</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Amoxapine: DIPG 4 = 21.00% inhibition"
+                           onclick="showTooltip(event, 'Amoxapine', 'DIPG 4', 21.00, 'Others', 'Others')">21.0%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Amoxapine: DIPG 17 = 32.16% inhibition"
+                           onclick="showTooltip(event, 'Amoxapine', 'DIPG 17', 32.16, 'Others', 'Others')">32.2%</div>
+<div class="drug-label" title="Antipyrine">Antipyrine</div>
+<div class="heatmap-cell" style="background-color: #D73027" 
+                           title="Antipyrine: DIPG 4 = 32.88% inhibition"
+                           onclick="showTooltip(event, 'Antipyrine', 'DIPG 4', 32.88, 'Others', 'Others')">32.9%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Antipyrine: DIPG 17 = 7.19% inhibition"
+                           onclick="showTooltip(event, 'Antipyrine', 'DIPG 17', 7.19, 'Others', 'Others')">7.2%</div>
+<div class="drug-label" title="ARN19702">ARN19702</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="ARN19702: DIPG 4 = 23.16% inhibition"
+                           onclick="showTooltip(event, 'ARN19702', 'DIPG 4', 23.16, 'Others', 'Others')">23.2%</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="ARN19702: DIPG 17 = 14.41% inhibition"
+                           onclick="showTooltip(event, 'ARN19702', 'DIPG 17', 14.41, 'Others', 'Others')">14.4%</div>
+<div class="drug-label" title="M8891">M8891</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="M8891: DIPG 4 = 11.81% inhibition"
+                           onclick="showTooltip(event, 'M8891', 'DIPG 4', 11.81, 'Others', 'Others')">11.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="M8891: DIPG 17 = 7.02% inhibition"
+                           onclick="showTooltip(event, 'M8891', 'DIPG 17', 7.02, 'Others', 'Others')">7.0%</div>
+<div class="drug-label" title="Metaxalone">Metaxalone</div>
+<div class="heatmap-cell" style="background-color: #F46D43" 
+                           title="Metaxalone: DIPG 4 = 14.58% inhibition"
+                           onclick="showTooltip(event, 'Metaxalone', 'DIPG 4', 14.58, 'Others', 'Others')">14.6%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Metaxalone: DIPG 17 = 2.25% inhibition"
+                           onclick="showTooltip(event, 'Metaxalone', 'DIPG 17', 2.25, 'Others', 'Others')">2.2%</div>
+<div class="drug-label" title="HAIYPRH (hydrochloride)">HAIYPRH (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="HAIYPRH (hydrochloride): DIPG 4 = 11.49% inhibition"
+                           onclick="showTooltip(event, 'HAIYPRH (hydrochloride)', 'DIPG 4', 11.49, 'Others', 'Others')">11.5%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="HAIYPRH (hydrochloride): DIPG 17 = 1.21% inhibition"
+                           onclick="showTooltip(event, 'HAIYPRH (hydrochloride)', 'DIPG 17', 1.21, 'Others', 'Others')">1.2%</div>
+<div class="drug-label" title="NT1-014B">NT1-014B</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="NT1-014B: DIPG 4 = 5.39% inhibition"
+                           onclick="showTooltip(event, 'NT1-014B', 'DIPG 4', 5.39, 'Others', 'Others')">5.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="NT1-014B: DIPG 17 = 2.25% inhibition"
+                           onclick="showTooltip(event, 'NT1-014B', 'DIPG 17', 2.25, 'Others', 'Others')">2.2%</div>
+<div class="drug-label" title="FPR2 agonist 2">FPR2 agonist 2</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="FPR2 agonist 2: DIPG 4 = 5.85% inhibition"
+                           onclick="showTooltip(event, 'FPR2 agonist 2', 'DIPG 4', 5.85, 'Others', 'Others')">5.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="FPR2 agonist 2: DIPG 17 = -3.14% inhibition"
+                           onclick="showTooltip(event, 'FPR2 agonist 2', 'DIPG 17', -3.14, 'Others', 'Others')">-3.1%</div>
+<div class="drug-label" title="Acid Ceramidase-IN-1">Acid Ceramidase-IN-1</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Acid Ceramidase-IN-1: DIPG 4 = -4.88% inhibition"
+                           onclick="showTooltip(event, 'Acid Ceramidase-IN-1', 'DIPG 4', -4.88, 'Others', 'Others')">-4.9%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Acid Ceramidase-IN-1: DIPG 17 = 7.28% inhibition"
+                           onclick="showTooltip(event, 'Acid Ceramidase-IN-1', 'DIPG 17', 7.28, 'Others', 'Others')">7.3%</div>
+<div class="drug-label" title="P7C3-A20">P7C3-A20</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="P7C3-A20: DIPG 4 = -2.16% inhibition"
+                           onclick="showTooltip(event, 'P7C3-A20', 'DIPG 4', -2.16, 'Others', 'Others')">-2.2%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="P7C3-A20: DIPG 17 = 1.88% inhibition"
+                           onclick="showTooltip(event, 'P7C3-A20', 'DIPG 17', 1.88, 'Others', 'Others')">1.9%</div>
+<div class="drug-label" title="Tranexamic acid">Tranexamic acid</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Tranexamic acid: DIPG 4 = -9.26% inhibition"
+                           onclick="showTooltip(event, 'Tranexamic acid', 'DIPG 4', -9.26, 'Others', 'Others')">-9.3%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Tranexamic acid: DIPG 17 = 7.53% inhibition"
+                           onclick="showTooltip(event, 'Tranexamic acid', 'DIPG 17', 7.53, 'Others', 'Others')">7.5%</div>
+<div class="drug-label" title="UGT8-IN-1">UGT8-IN-1</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="UGT8-IN-1: DIPG 4 = 1.05% inhibition"
+                           onclick="showTooltip(event, 'UGT8-IN-1', 'DIPG 4', 1.05, 'Others', 'Others')">1.1%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="UGT8-IN-1: DIPG 17 = -10.59% inhibition"
+                           onclick="showTooltip(event, 'UGT8-IN-1', 'DIPG 17', -10.59, 'Others', 'Others')">-10.6%</div>
+<div class="drug-label" title="MK-8719">MK-8719</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="MK-8719: DIPG 4 = -5.42% inhibition"
+                           onclick="showTooltip(event, 'MK-8719', 'DIPG 4', -5.42, 'Others', 'Others')">-5.4%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="MK-8719: DIPG 17 = -4.74% inhibition"
+                           onclick="showTooltip(event, 'MK-8719', 'DIPG 17', -4.74, 'Others', 'Others')">-4.7%</div>
+<div class="drug-label" title="Carbetapentane (citrate)">Carbetapentane (citrate)</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Carbetapentane (citrate): DIPG 4 = -4.01% inhibition"
+                           onclick="showTooltip(event, 'Carbetapentane (citrate)', 'DIPG 4', -4.01, 'Others', 'Others')">-4.0%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Carbetapentane (citrate): DIPG 17 = -6.87% inhibition"
+                           onclick="showTooltip(event, 'Carbetapentane (citrate)', 'DIPG 17', -6.87, 'Others', 'Others')">-6.9%</div>
+<div class="drug-label" title="FGIN 1-27">FGIN 1-27</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="FGIN 1-27: DIPG 4 = -12.66% inhibition"
+                           onclick="showTooltip(event, 'FGIN 1-27', 'DIPG 4', -12.66, 'Others', 'Others')">-12.7%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="FGIN 1-27: DIPG 17 = -6.05% inhibition"
+                           onclick="showTooltip(event, 'FGIN 1-27', 'DIPG 17', -6.05, 'Others', 'Others')">-6.0%</div>
+<div class="drug-label" title="AS057278">AS057278</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="AS057278: DIPG 4 = -11.90% inhibition"
+                           onclick="showTooltip(event, 'AS057278', 'DIPG 4', -11.90, 'Others', 'Others')">-11.9%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="AS057278: DIPG 17 = -7.05% inhibition"
+                           onclick="showTooltip(event, 'AS057278', 'DIPG 17', -7.05, 'Others', 'Others')">-7.1%</div>
+<div class="drug-label" title="IP7e">IP7e</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="IP7e: DIPG 4 = -8.52% inhibition"
+                           onclick="showTooltip(event, 'IP7e', 'DIPG 4', -8.52, 'Others', 'Others')">-8.5%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="IP7e: DIPG 17 = -11.54% inhibition"
+                           onclick="showTooltip(event, 'IP7e', 'DIPG 17', -11.54, 'Others', 'Others')">-11.5%</div>
+<div class="drug-label" title="Protein deglycase DJ-1 against-1">Protein deglycase DJ-1 against-1</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Protein deglycase DJ-1 against-1: DIPG 4 = -23.82% inhibition"
+                           onclick="showTooltip(event, 'Protein deglycase DJ-1 against-1', 'DIPG 4', -23.82, 'Others', 'Others')">-23.8%</div>
+<div class="heatmap-cell" style="background-color: #FDAE61" 
+                           title="Protein deglycase DJ-1 against-1: DIPG 17 = -0.74% inhibition"
+                           onclick="showTooltip(event, 'Protein deglycase DJ-1 against-1', 'DIPG 17', -0.74, 'Others', 'Others')">-0.7%</div>
+<div class="drug-label" title="Cytosporone B">Cytosporone B</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Cytosporone B: DIPG 4 = -23.14% inhibition"
+                           onclick="showTooltip(event, 'Cytosporone B', 'DIPG 4', -23.14, 'Others', 'Others')">-23.1%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Cytosporone B: DIPG 17 = -6.90% inhibition"
+                           onclick="showTooltip(event, 'Cytosporone B', 'DIPG 17', -6.90, 'Others', 'Others')">-6.9%</div>
+<div class="drug-label" title="Simufilam (hydrochloride)">Simufilam (hydrochloride)</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Simufilam (hydrochloride): DIPG 4 = -16.10% inhibition"
+                           onclick="showTooltip(event, 'Simufilam (hydrochloride)', 'DIPG 4', -16.10, 'Others', 'Others')">-16.1%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Simufilam (hydrochloride): DIPG 17 = -17.62% inhibition"
+                           onclick="showTooltip(event, 'Simufilam (hydrochloride)', 'DIPG 17', -17.62, 'Others', 'Others')">-17.6%</div>
+<div class="drug-label" title="Beta-asarone">Beta-asarone</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="Beta-asarone: DIPG 4 = -14.65% inhibition"
+                           onclick="showTooltip(event, 'Beta-asarone', 'DIPG 4', -14.65, 'Others', 'Others')">-14.7%</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Beta-asarone: DIPG 17 = -25.34% inhibition"
+                           onclick="showTooltip(event, 'Beta-asarone', 'DIPG 17', -25.34, 'Others', 'Others')">-25.3%</div>
+<div class="drug-label" title="PZ-2891">PZ-2891</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="PZ-2891: DIPG 4 = -24.05% inhibition"
+                           onclick="showTooltip(event, 'PZ-2891', 'DIPG 4', -24.05, 'Others', 'Others')">-24.0%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="PZ-2891: DIPG 17 = -17.78% inhibition"
+                           onclick="showTooltip(event, 'PZ-2891', 'DIPG 17', -17.78, 'Others', 'Others')">-17.8%</div>
+<div class="drug-label" title="RTI-7470-44">RTI-7470-44</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="RTI-7470-44: DIPG 4 = -24.73% inhibition"
+                           onclick="showTooltip(event, 'RTI-7470-44', 'DIPG 4', -24.73, 'Others', 'Others')">-24.7%</div>
+<div class="heatmap-cell" style="background-color: #FEE08B" 
+                           title="RTI-7470-44: DIPG 17 = -20.26% inhibition"
+                           onclick="showTooltip(event, 'RTI-7470-44', 'DIPG 17', -20.26, 'Others', 'Others')">-20.3%</div>
+<div class="drug-label" title="Rufinamide">Rufinamide</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Rufinamide: DIPG 4 = -42.99% inhibition"
+                           onclick="showTooltip(event, 'Rufinamide', 'DIPG 4', -42.99, 'Others', 'Others')">-43.0%</div>
+<div class="heatmap-cell" style="background-color: #3288BD" 
+                           title="Rufinamide: DIPG 17 = -24.68% inhibition"
+                           onclick="showTooltip(event, 'Rufinamide', 'DIPG 17', -24.68, 'Others', 'Others')">-24.7%</div>
+
+                </div>
+            </div>
+            
+            <div class="legend">
+                <h3>Cell Inhibition Scale (Colorblind-Friendly)</h3>
+                <div class="color-scale">
+                    <div style="background-color: #D73027;">Excellent<br>(> 32.6%)</div>
+                    <div style="background-color: #F46D43;">Good<br>(13.7 - 32.6%)</div>
+                    <div style="background-color: #FDAE61;">Moderate<br>(-5.2 - 13.7%)</div>
+                    <div style="background-color: #FEE08B;">Poor<br>(-24.1 - -5.2%)</div>
+                    <div style="background-color: #3288BD;">Growth<br>(< -24.1%)</div>
+                </div>
+                <p style="text-align: center; margin-top: 15px; color: #000000;">
+                    <strong>Note:</strong> Positive values indicate cell inhibition (good), negative values indicate cell growth (bad).
+                    <br>Click on cells for detailed drug information.
+                </p>
+            </div>
+            
+            <a href="index.html" class="back-button">← Back to Dashboard</a>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+        
+        <script>
+            function showTooltip(event, drugName, cellLine, score, targets, pathways) {
+                const tooltip = document.getElementById('tooltip');
+                const inhibitionText = score >= 0 ? `${score.toFixed(1)}% inhibition` : `${Math.abs(score).toFixed(1)}% growth`;
+                const effectivenessText = score >= 0 ? 'Effective' : 'Ineffective';
+                
+                tooltip.innerHTML = `
+                    <strong>${drugName}</strong><br>
+                    <strong>Cell Line:</strong> ${cellLine}<br>
+                    <strong>Result:</strong> ${inhibitionText} (${effectivenessText})<br>
+                    <strong>Targets:</strong> ${targets}<br>
+                    <strong>Pathways:</strong> ${pathways}
+                `;
+                tooltip.style.left = event.pageX + 15 + 'px';
+                tooltip.style.top = event.pageY + 15 + 'px';
+                tooltip.style.display = 'block';
+                
+                setTimeout(() => {
+                    tooltip.style.display = 'none';
+                }, 8000);
+            }
+            
+            document.addEventListener('click', function(event) {
+                if (!event.target.classList.contains('heatmap-cell')) {
+                    document.getElementById('tooltip').style.display = 'none';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    

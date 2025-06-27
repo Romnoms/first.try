@@ -1,825 +1,501 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RNA-seq Enrichment Analysis Dashboard - SCD Inhibition Study</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #2ecc71;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --light-bg: #ecf0f1;
-            --dark-text: #2c3e50;
-            --border-radius: 8px;
-            --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: var(--dark-text);
-            background-color: #f5f7fa;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 2rem;
-            box-shadow: var(--box-shadow);
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .controls {
-            background: white;
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 2rem;
-            box-shadow: var(--box-shadow);
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .dropdown-container {
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .dropdown-container label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--dark-text);
-        }
-
-        select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        select:hover {
-            border-color: var(--secondary-color);
-        }
-
-        select:focus {
-            outline: none;
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        .stats {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-        }
-
-        .stat-badge {
-            background: var(--light-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .content-section {
-            display: none;
-            animation: fadeIn 0.5s;
-        }
-
-        .content-section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .card {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--box-shadow);
-        }
-
-        .card h2 {
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-size: 1.8rem;
-            border-bottom: 2px solid var(--light-bg);
-            padding-bottom: 0.5rem;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 400px;
-            margin-bottom: 2rem;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .pathway-item {
-            background: var(--light-bg);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--secondary-color);
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-        }
-
-        .pathway-item:hover {
-            transform: translateX(5px);
-            box-shadow: var(--box-shadow);
-        }
-
-        .pathway-title {
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-
-        .pathway-stats {
-            display: flex;
-            gap: 1rem;
-            margin: 0.5rem 0;
-        }
-
-        .stat-pill {
-            background: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .up { color: var(--danger-color); }
-        .down { color: var(--secondary-color); }
-
-        .gene-list {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th {
-            background: var(--primary-color);
-            color: white;
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #eee;
-        }
-
-        tr:hover {
-            background: var(--light-bg);
-        }
-
-        .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid var(--secondary-color);
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: var(--border-radius);
-        }
-
-        .gene-chip {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            margin: 0.25rem;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            background: var(--light-bg);
-        }
-
-        .gene-chip.up {
-            background: #ffebee;
-            color: var(--danger-color);
-        }
-
-        .gene-chip.down {
-            background: #e3f2fd;
-            color: var(--secondary-color);
-        }
-
-        @media (max-width: 768px) {
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DIPG Drug Inhibition Heatmaps - Interactive Dashboard</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { 
+                font-family: Verdana, Arial, sans-serif; 
+                background: #F5F5F5;
+                min-height: 100vh;
+                padding: 20px;
+                color: #000000;
+                line-height: 1.4;
+            }
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background: #FFFFFF;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                overflow: hidden;
+                border: 1px solid #CCCCCC;
+            }
+            .header { 
+                text-align: center; 
+                padding: 50px 20px; 
+                background: #E8E8E8;
+                color: #000000;
+                border-bottom: 2px solid #CCCCCC;
+            }
             .header h1 {
-                font-size: 2rem;
+                font-size: 3em;
+                margin-bottom: 15px;
+                font-weight: bold;
+                color: #000000;
             }
-            
-            .controls {
-                flex-direction: column;
+            .header p {
+                font-size: 1.3em;
+                color: #333333;
+                line-height: 1.6;
+                font-weight: normal;
             }
-            
-            .stats {
-                flex-direction: column;
-                width: 100%;
+            .summary { 
+                background: #F0F0F0;
+                color: #000000;
+                padding: 40px; 
+                margin: 0;
+                border-bottom: 1px solid #CCCCCC;
+            }
+            .summary h2 {
+                font-size: 2em;
+                margin-bottom: 20px;
+                color: #000000;
+                font-weight: bold;
+            }
+            .summary p {
+                font-size: 1.1em;
+                line-height: 1.8;
+                margin-bottom: 15px;
+                color: #000000;
+            }
+            .category-grid { 
+                display: grid; 
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+                gap: 30px; 
+                padding: 50px 40px;
+                background: #F8F8F8;
+            }
+            .category-card { 
+                background: #FFFFFF;
+                border-radius: 8px; 
+                padding: 30px; 
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                transition: all 0.3s ease;
+                border: 1px solid #DDDDDD;
+            }
+            .category-card:hover { 
+                transform: translateY(-5px); 
+                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                border-color: #AAAAAA;
+            }
+            .category-title { 
+                color: #000000; 
+                font-size: 1.4em; 
+                font-weight: bold; 
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .stats { 
+                font-size: 14px; 
+                color: #333333; 
+                margin-bottom: 25px; 
+                line-height: 1.8;
+            }
+            .stats div { 
+                margin: 10px 0; 
+                padding: 8px 0;
+                border-bottom: 1px solid #EEEEEE;
+            }
+            .stats div:last-child {
+                border-bottom: none;
+            }
+            .stats strong {
+                color: #000000;
+                display: inline-block;
+                min-width: 120px;
+                font-weight: bold;
+            }
+            .btn { 
+                display: inline-block;
+                padding: 15px 30px; 
+                border: 1px solid #AAAAAA; 
+                border-radius: 4px; 
+                text-decoration: none; 
+                font-weight: bold; 
+                transition: all 0.3s ease;
                 text-align: center;
+                font-size: 1.1em;
+                width: 100%;
+                background: #DDDDDD;
+                color: #000000;
+                font-family: Verdana, Arial, sans-serif;
             }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>RNA-seq Enrichment Analysis Dashboard</h1>
-            <p>SCD Inhibition Study - Pathway and Functional Enrichment Analysis</p>
-        </div>
-
-        <div class="controls">
-            <div class="dropdown-container">
-                <label for="analysisType">Select Analysis Type:</label>
-                <select id="analysisType" onchange="switchAnalysis(this.value)">
-                    <option value="overview">Overview</option>
-                    <option value="lipid">Lipid Metabolism</option>
-                    <option value="angiogenesis">Angiogenesis</option>
-                    <option value="volcano">Volcano Plot</option>
-                </select>
-            </div>
-            <div class="stats">
-                <div class="stat-badge">Total Genes: 13,922</div>
-                <div class="stat-badge up">Up: 2,310</div>
-                <div class="stat-badge down">Down: 2,073</div>
-            </div>
-        </div>
-
-        <!-- Overview Section -->
-        <div id="overview-section" class="content-section active">
-            <div class="card">
-                <h2>Differential Expression Overview</h2>
-                <div class="info-box">
-                    <strong>Experiment:</strong> RNA-seq analysis of SCD inhibition in GBM cells
-                    <br><strong>Conditions:</strong> Control vs SCDi treatment
-                    <br><strong>Threshold:</strong> |log2FC| > 1
-                </div>
-                
-                <div class="grid">
-                    <div class="chart-container">
-                        <canvas id="overviewChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="pathwayBarChart"></canvas>
-                    </div>
-                </div>
-
-                <h3>Key Findings</h3>
-                <div class="grid">
-                    <div class="pathway-item">
-                        <div class="pathway-title">Lipid Metabolism</div>
-                        <div class="pathway-stats">
-                            <span class="stat-pill">91 genes affected</span>
-                        </div>
-                        <div class="gene-list">
-                            Strong downregulation of lipid biosynthesis genes including ELOVL7, FA2H, and PPARG
-                        </div>
-                    </div>
-                    <div class="pathway-item">
-                        <div class="pathway-title">Angiogenesis</div>
-                        <div class="pathway-stats">
-                            <span class="stat-pill">33 genes affected</span>
-                        </div>
-                        <div class="gene-list">
-                            Mixed response with ANGPTL4 and FLT4 downregulated, but LIPG and EDNRA upregulated
-                        </div>
-                    </div>
-                    <div class="pathway-item">
-                        <div class="pathway-title">Transcription Regulation</div>
-                        <div class="pathway-stats">
-                            <span class="stat-pill">421 genes affected</span>
-                        </div>
-                        <div class="gene-list">
-                            Largest category of affected genes, including many zinc finger proteins
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lipid Metabolism Section -->
-        <div id="lipid-section" class="content-section">
-            <div class="card">
-                <h2>Lipid Metabolism Analysis</h2>
-                <div class="info-box">
-                    <strong>Categories:</strong> Lipid Biosynthesis, Lipid Transport, PPAR Signaling
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="lipidChart"></canvas>
-                </div>
-
-                <h3>Top Differentially Expressed Lipid Genes</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Gene</th>
-                            <th>Log2 FC</th>
-                            <th>Category</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lipidTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Angiogenesis Section -->
-        <div id="angiogenesis-section" class="content-section">
-            <div class="card">
-                <h2>Angiogenesis Analysis</h2>
-                <div class="info-box">
-                    <strong>Focus:</strong> Genes involved in blood vessel formation and vascular development
-                </div>
-                
-                <div class="chart-container">
-                    <canvas id="angiogenesisChart"></canvas>
-                </div>
-
-                <h3>Angiogenesis-Related Genes</h3>
-                <div id="angiogenesisGenes" class="grid"></div>
-            </div>
-        </div>
-
-        <!-- Volcano Plot Section -->
-        <div id="volcano-section" class="content-section">
-            <div class="card">
-                <h2>Volcano Plot</h2>
-                <div class="info-box">
-                    <strong>Visualization:</strong> Log2 fold change vs significance (simulated p-values)
-                </div>
-                
-                <div id="volcanoPlot" style="height: 600px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Embedded data from RNA-seq analysis
-        const analysisData = {
-            summary: {
-                totalGenes: 13922,
-                sigGenes: 4383,
-                upGenes: 2310,
-                downGenes: 2073
-            },
-            topGenes: {
-                "Lipid Biosynthesis": [
-                    { name: "PLPP2", fc: -4.59, desc: "phospholipid phosphatase 2" },
-                    { name: "ELOVL7", fc: -3.35, desc: "ELOVL fatty acid elongase 7" },
-                    { name: "DEGS2", fc: -3.32, desc: "delta 4-desaturase, sphingolipid 2" },
-                    { name: "FA2H", fc: -2.95, desc: "fatty acid 2-hydroxylase" },
-                    { name: "FABP7", fc: 2.86, desc: "fatty acid binding protein 7" },
-                    { name: "PLPPR5", fc: 2.64, desc: "phospholipid phosphatase related 5" },
-                    { name: "FADS2", fc: 2.49, desc: "fatty acid desaturase 2" },
-                    { name: "FABP5", fc: 2.48, desc: "fatty acid binding protein 5" }
-                ],
-                "Lipid Transport": [
-                    { name: "ATP11A", fc: -3.59, desc: "ATPase phospholipid transporting 11A" },
-                    { name: "ATP8A2", fc: -3.13, desc: "ATPase phospholipid transporting 8A2" },
-                    { name: "ATP8B3", fc: -2.94, desc: "ATPase phospholipid transporting 8B3" },
-                    { name: "ATP10A", fc: 2.05, desc: "ATPase phospholipid transporting 10A" },
-                    { name: "SPNS2", fc: -1.58, desc: "sphingolipid transporter 2" }
-                ],
-                "PPAR Signaling": [
-                    { name: "PPARGC1B", fc: -3.25, desc: "PPARG coactivator 1 beta" },
-                    { name: "PPARG", fc: -2.88, desc: "peroxisome proliferator activated receptor gamma" },
-                    { name: "PPARGC1A", fc: 2.70, desc: "PPARG coactivator 1 alpha" }
-                ],
-                "Angiogenesis": [
-                    { name: "ANGPTL4", fc: -5.71, desc: "angiopoietin like 4" },
-                    { name: "PEAR1", fc: -5.17, desc: "platelet endothelial aggregation receptor 1" },
-                    { name: "FLT4", fc: -4.18, desc: "fms related tyrosine kinase 4" },
-                    { name: "LIPG", fc: 2.78, desc: "lipase G, endothelial type" },
-                    { name: "EDNRA", fc: 2.75, desc: "endothelin receptor type A" },
-                    { name: "ANGPTL1", fc: 2.43, desc: "angiopoietin like 1" },
-                    { name: "ANGPT1", fc: -2.01, desc: "angiopoietin 1" },
-                    { name: "CYR61", fc: -1.84, desc: "cysteine rich angiogenic inducer 61" },
-                    { name: "ANGPTL6", fc: -1.79, desc: "angiopoietin like 6" },
-                    { name: "ANGPTL2", fc: 1.66, desc: "angiopoietin like 2" },
-                    { name: "VCAM1", fc: 1.55, desc: "vascular cell adhesion molecule 1" },
-                    { name: "ANGPT2", fc: 1.38, desc: "angiopoietin 2" }
-                ]
-            },
-            // Additional genes for volcano plot
-            volcanoData: [
-                // Top upregulated
-                { gene: "FABP7", fc: 2.86, pval: 0.0001 },
-                { gene: "LIPG", fc: 2.78, pval: 0.0002 },
-                { gene: "EDNRA", fc: 2.75, pval: 0.0001 },
-                { gene: "PPARGC1A", fc: 2.70, pval: 0.0005 },
-                { gene: "PLPPR5", fc: 2.64, pval: 0.0003 },
-                { gene: "FADS2", fc: 2.49, pval: 0.0004 },
-                { gene: "FABP5", fc: 2.48, pval: 0.0002 },
-                { gene: "ANGPTL1", fc: 2.43, pval: 0.0008 },
-                { gene: "ATP10A", fc: 2.05, pval: 0.001 },
-                { gene: "ANGPTL2", fc: 1.66, pval: 0.002 },
-                // Top downregulated
-                { gene: "ANGPTL4", fc: -5.71, pval: 0.00001 },
-                { gene: "PEAR1", fc: -5.17, pval: 0.00002 },
-                { gene: "PLPP2", fc: -4.59, pval: 0.00005 },
-                { gene: "FLT4", fc: -4.18, pval: 0.00008 },
-                { gene: "ATP11A", fc: -3.59, pval: 0.0001 },
-                { gene: "ELOVL7", fc: -3.35, pval: 0.0002 },
-                { gene: "DEGS2", fc: -3.32, pval: 0.0001 },
-                { gene: "PPARGC1B", fc: -3.25, pval: 0.0003 },
-                { gene: "ATP8A2", fc: -3.13, pval: 0.0004 },
-                { gene: "FA2H", fc: -2.95, pval: 0.0002 },
-                { gene: "ATP8B3", fc: -2.94, pval: 0.0003 },
-                { gene: "PPARG", fc: -2.88, pval: 0.0001 },
-                // Some non-significant for contrast
-                { gene: "GENE1", fc: 0.3, pval: 0.2 },
-                { gene: "GENE2", fc: -0.2, pval: 0.3 },
-                { gene: "GENE3", fc: 0.5, pval: 0.1 },
-                { gene: "GENE4", fc: -0.4, pval: 0.15 }
-            ]
-        };
-
-        // Chart instances
-        let charts = {};
-
-        // Initialize dashboard
-        function initDashboard() {
-            drawOverviewCharts();
-        }
-
-        // Switch between analyses
-        function switchAnalysis(type) {
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.classList.remove('active');
-            });
-
-            document.getElementById(`${type}-section`).classList.add('active');
-
-            switch(type) {
-                case 'overview':
-                    drawOverviewCharts();
-                    break;
-                case 'lipid':
-                    drawLipidCharts();
-                    break;
-                case 'angiogenesis':
-                    drawAngiogenesisCharts();
-                    break;
-                case 'volcano':
-                    drawVolcanoPlot();
-                    break;
+            .btn:hover { 
+                background: #CCCCCC;
+                border-color: #888888;
             }
-        }
-
-        // Draw overview charts
-        function drawOverviewCharts() {
-            // Pie chart
-            const ctx1 = document.getElementById('overviewChart').getContext('2d');
-            if (charts.overview) charts.overview.destroy();
-
-            charts.overview = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Upregulated', 'Downregulated'],
-                    datasets: [{
-                        data: [analysisData.summary.upGenes, analysisData.summary.downGenes],
-                        backgroundColor: ['#e74c3c', '#3498db']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Differentially Expressed Genes (4,383 total)'
-                        }
-                    }
-                }
-            });
-
-            // Pathway bar chart
-            const ctx2 = document.getElementById('pathwayBarChart').getContext('2d');
-            if (charts.pathwayBar) charts.pathwayBar.destroy();
-
-            const pathwayCounts = {
-                'Transcription': 421,
-                'Immune Response': 113,
-                'Lipid Metabolism': 91,
-                'Cell Cycle': 67,
-                'Apoptosis': 48,
-                'MAPK Signaling': 36,
-                'Angiogenesis': 33,
-                'PI3K-AKT': 19
-            };
-
-            charts.pathwayBar = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(pathwayCounts),
-                    datasets: [{
-                        label: 'Number of DE Genes',
-                        data: Object.values(pathwayCounts),
-                        backgroundColor: '#2ecc71'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Pathway Enrichment'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Draw lipid metabolism charts
-        function drawLipidCharts() {
-            const ctx = document.getElementById('lipidChart').getContext('2d');
-            if (charts.lipid) charts.lipid.destroy();
-
-            // Combine all lipid genes
-            const allLipidGenes = [
-                ...analysisData.topGenes["Lipid Biosynthesis"],
-                ...analysisData.topGenes["Lipid Transport"],
-                ...analysisData.topGenes["PPAR Signaling"]
-            ];
-
-            // Sort by absolute fold change
-            const topLipidGenes = allLipidGenes
-                .sort((a, b) => Math.abs(b.fc) - Math.abs(a.fc))
-                .slice(0, 15);
-
-            charts.lipid = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: topLipidGenes.map(g => g.name),
-                    datasets: [{
-                        label: 'Log2 Fold Change',
-                        data: topLipidGenes.map(g => g.fc),
-                        backgroundColor: topLipidGenes.map(g => g.fc > 0 ? '#e74c3c' : '#3498db')
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Top Differentially Expressed Lipid Metabolism Genes'
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Log2 Fold Change'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Populate table
-            const tableHTML = topLipidGenes.map(gene => {
-                let category = 'Biosynthesis';
-                if (gene.name.includes('ATP')) category = 'Transport';
-                else if (gene.name.includes('PPAR')) category = 'PPAR Signaling';
-                
-                return `
-                    <tr>
-                        <td><strong>${gene.name}</strong></td>
-                        <td class="${gene.fc > 0 ? 'up' : 'down'}">${gene.fc.toFixed(2)}</td>
-                        <td>${category}</td>
-                        <td>${gene.desc}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            document.getElementById('lipidTableBody').innerHTML = tableHTML;
-        }
-
-        // Draw angiogenesis charts
-        function drawAngiogenesisCharts() {
-            const ctx = document.getElementById('angiogenesisChart').getContext('2d');
-            if (charts.angiogenesis) charts.angiogenesis.destroy();
-
-            const angioGenes = analysisData.topGenes["Angiogenesis"];
-
-            charts.angiogenesis = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: angioGenes.map(g => g.name),
-                    datasets: [{
-                        label: 'Log2 Fold Change',
-                        data: angioGenes.map(g => g.fc),
-                        backgroundColor: angioGenes.map(g => g.fc > 0 ? '#e74c3c' : '#3498db')
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Angiogenesis Gene Expression Changes'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Log2 Fold Change'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Gene cards
-            const geneHTML = angioGenes.slice(0, 9).map(gene => `
-                <div class="pathway-item">
-                    <div class="pathway-title">${gene.name}</div>
-                    <div class="pathway-stats">
-                        <span class="stat-pill ${gene.fc > 0 ? 'up' : 'down'}">
-                            Log2FC: ${gene.fc.toFixed(2)}
-                        </span>
-                    </div>
-                    <div class="gene-list">
-                        ${gene.desc}
-                    </div>
+            .footer {
+                text-align: center;
+                padding: 40px;
+                background: #E8E8E8;
+                color: #000000;
+                font-size: 1.1em;
+                border-top: 1px solid #CCCCCC;
+            }
+            .stats-highlight {
+                background: #DDDDDD;
+                color: #000000;
+                padding: 3px 8px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 0.9em;
+                border: 1px solid #AAAAAA;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>DIPG Drug Inhibition Heatmaps</h1>
+                <p>Interactive Dashboard for Cell Death Analysis</p>
+                <p>Comprehensive visualization of drug efficacy</p>
+            </div>
+            
+            <div class="summary">
+                <h2>Analysis Overview</h2>
+                <p><strong>Objective:</strong> Visualize drug efficacy in killing DIPG (Diffuse Intrinsic Pontine Glioma) cancer cells across different therapeutic categories.</p>
+                <p><strong>Data Interpretation:</strong> <strong>Positive values = Good</strong> (% cells killed), <strong>Negative values = Bad</strong> (cell growth occurred)</p>
+                <p><strong>Layout:</strong> Each heatmap shows drugs as rows and DIPG cell lines (4 & 17) as columns.</p>
+                <p><strong>Color Coding:</strong> Warm colors (Orange/Red) = High cell death (effective) → Cool colors (Blue) = Cell growth (ineffective)</p>
+                <p><strong>Accessibility:</strong> Colorblind-friendly palette with high contrast black text on light backgrounds.</p>
+            </div>
+            
+            <div class="category-grid">
+    
+            <div class="category-card">
+                <div class="category-title">
+                    EGFR
+                    <span class="stats-highlight">Effective</span>
                 </div>
-            `).join('');
-
-            document.getElementById('angiogenesisGenes').innerHTML = geneHTML;
-        }
-
-        // Draw volcano plot
-        function drawVolcanoPlot() {
-            const width = 800;
-            const height = 600;
-            const margin = { top: 20, right: 30, bottom: 50, left: 60 };
-
-            // Clear previous plot
-            d3.select("#volcanoPlot").selectAll("*").remove();
-
-            const svg = d3.select("#volcanoPlot")
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height);
-
-            const g = svg.append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
-
-            // Prepare data
-            const plotData = analysisData.volcanoData.map(d => ({
-                gene: d.gene,
-                x: d.fc,
-                y: -Math.log10(d.pval),
-                sig: Math.abs(d.fc) > 1 && d.pval < 0.05
-            }));
-
-            // Scales
-            const xScale = d3.scaleLinear()
-                .domain([-6, 4])
-                .range([0, width - margin.left - margin.right]);
-
-            const yScale = d3.scaleLinear()
-                .domain([0, 6])
-                .range([height - margin.top - margin.bottom, 0]);
-
-            // Add axes
-            g.append("g")
-                .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
-                .call(d3.axisBottom(xScale));
-
-            g.append("g")
-                .call(d3.axisLeft(yScale));
-
-            // Add axis labels
-            g.append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 0 - margin.left)
-                .attr("x", 0 - (height - margin.top - margin.bottom) / 2)
-                .attr("dy", "1em")
-                .style("text-anchor", "middle")
-                .text("-log10(p-value)");
-
-            g.append("text")
-                .attr("x", (width - margin.left - margin.right) / 2)
-                .attr("y", height - margin.top - margin.bottom + 40)
-                .style("text-anchor", "middle")
-                .text("Log2 Fold Change");
-
-            // Add significance lines
-            g.append("line")
-                .attr("x1", xScale(-1))
-                .attr("x2", xScale(-1))
-                .attr("y1", 0)
-                .attr("y2", height - margin.top - margin.bottom)
-                .style("stroke", "#999")
-                .style("stroke-dasharray", "3,3");
-
-            g.append("line")
-                .attr("x1", xScale(1))
-                .attr("x2", xScale(1))
-                .attr("y1", 0)
-                .attr("y2", height - margin.top - margin.bottom)
-                .style("stroke", "#999")
-                .style("stroke-dasharray", "3,3");
-
-            g.append("line")
-                .attr("x1", 0)
-                .attr("x2", width - margin.left - margin.right)
-                .attr("y1", yScale(-Math.log10(0.05)))
-                .attr("y2", yScale(-Math.log10(0.05)))
-                .style("stroke", "#999")
-                .style("stroke-dasharray", "3,3");
-
-            // Add points
-            g.selectAll("circle")
-                .data(plotData)
-                .enter().append("circle")
-                .attr("cx", d => xScale(d.x))
-                .attr("cy", d => yScale(d.y))
-                .attr("r", d => d.sig ? 6 : 4)
-                .style("fill", d => {
-                    if (!d.sig) return "#95a5a6";
-                    return d.x > 0 ? "#e74c3c" : "#3498db";
-                })
-                .style("opacity", d => d.sig ? 0.8 : 0.4);
-
-            // Add gene labels for significant genes
-            g.selectAll("text.gene-label")
-                .data(plotData.filter(d => d.sig))
-                .enter().append("text")
-                .attr("class", "gene-label")
-                .attr("x", d => xScale(d.x))
-                .attr("y", d => yScale(d.y) - 8)
-                .style("text-anchor", "middle")
-                .style("font-size", "10px")
-                .style("font-weight", "bold")
-                .text(d => d.gene);
-        }
-
-        // Initialize on load
-        window.addEventListener('load', initDashboard);
-    </script>
-</body>
-</html>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 8</div>
+                    <div><strong>Best Inhibitor:</strong> JCN037</div>
+                    <div><strong>Best Score:</strong> 81.50%</div>
+                    <div><strong>Worst Performer:</strong> Icotinib</div>
+                    <div><strong>Avg DIPG 4:</strong> 28.3%</div>
+                    <div><strong>Avg DIPG 17:</strong> 30.4%</div>
+                </div>
+                <a href="EGFR_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Autophagy
+                    <span class="stats-highlight">Moderate</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 57</div>
+                    <div><strong>Best Inhibitor:</strong> Flavopiridol (Hydrochloride)</div>
+                    <div><strong>Best Score:</strong> 91.92%</div>
+                    <div><strong>Worst Performer:</strong> Irinotecan</div>
+                    <div><strong>Avg DIPG 4:</strong> 16.3%</div>
+                    <div><strong>Avg DIPG 17:</strong> 16.2%</div>
+                </div>
+                <a href="Autophagy_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Apoptosis
+                    <span class="stats-highlight">Moderate</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 96</div>
+                    <div><strong>Best Inhibitor:</strong> Vorinostat</div>
+                    <div><strong>Best Score:</strong> 87.24%</div>
+                    <div><strong>Worst Performer:</strong> Pomalidomide</div>
+                    <div><strong>Avg DIPG 4:</strong> 12.6%</div>
+                    <div><strong>Avg DIPG 17:</strong> 12.7%</div>
+                </div>
+                <a href="Apoptosis_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Serotonin Transporter
+                    <span class="stats-highlight">Moderate</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 11</div>
+                    <div><strong>Best Inhibitor:</strong> Clomipramine (hydrochloride)</div>
+                    <div><strong>Best Score:</strong> 91.91%</div>
+                    <div><strong>Worst Performer:</strong> Fluvoxamine (maleate)</div>
+                    <div><strong>Avg DIPG 4:</strong> 13.0%</div>
+                    <div><strong>Avg DIPG 17:</strong> 8.3%</div>
+                </div>
+                <a href="Serotonin_Transporter_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    mGluR
+                    <span class="stats-highlight">Moderate</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 15</div>
+                    <div><strong>Best Inhibitor:</strong> AMN082</div>
+                    <div><strong>Best Score:</strong> 70.92%</div>
+                    <div><strong>Worst Performer:</strong> VU6012962</div>
+                    <div><strong>Avg DIPG 4:</strong> 8.3%</div>
+                    <div><strong>Avg DIPG 17:</strong> 10.3%</div>
+                </div>
+                <a href="mGluR_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Amyloid-β
+                    <span class="stats-highlight">Moderate</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 11</div>
+                    <div><strong>Best Inhibitor:</strong> Azeliragon</div>
+                    <div><strong>Best Score:</strong> 92.04%</div>
+                    <div><strong>Worst Performer:</strong> BF 227</div>
+                    <div><strong>Avg DIPG 4:</strong> 3.6%</div>
+                    <div><strong>Avg DIPG 17:</strong> -2.1%</div>
+                </div>
+                <a href="Amyloid_β_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Dopamine Receptor
+                    <span class="stats-highlight">Moderate</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 22</div>
+                    <div><strong>Best Inhibitor:</strong> Benztropine (mesylate)</div>
+                    <div><strong>Best Score:</strong> 82.33%</div>
+                    <div><strong>Worst Performer:</strong> Clozapine N-oxide</div>
+                    <div><strong>Avg DIPG 4:</strong> 3.3%</div>
+                    <div><strong>Avg DIPG 17:</strong> -3.2%</div>
+                </div>
+                <a href="Dopamine_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Endogenous Metabolite
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 20</div>
+                    <div><strong>Best Inhibitor:</strong> Cyclo(his-pro) (TFA)</div>
+                    <div><strong>Best Score:</strong> 60.71%</div>
+                    <div><strong>Worst Performer:</strong> Anserine</div>
+                    <div><strong>Avg DIPG 4:</strong> -2.2%</div>
+                    <div><strong>Avg DIPG 17:</strong> -0.1%</div>
+                </div>
+                <a href="Endogenous_Metabolite_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Others
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 25</div>
+                    <div><strong>Best Inhibitor:</strong> DSP-4 (hydrochloride)</div>
+                    <div><strong>Best Score:</strong> 47.83%</div>
+                    <div><strong>Worst Performer:</strong> Rufinamide</div>
+                    <div><strong>Avg DIPG 4:</strong> -2.3%</div>
+                    <div><strong>Avg DIPG 17:</strong> -1.1%</div>
+                </div>
+                <a href="Others_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Antibiotic
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 50</div>
+                    <div><strong>Best Inhibitor:</strong> Epirubicin (hydrochloride)</div>
+                    <div><strong>Best Score:</strong> 77.51%</div>
+                    <div><strong>Worst Performer:</strong> Levofloxacin</div>
+                    <div><strong>Avg DIPG 4:</strong> 0.3%</div>
+                    <div><strong>Avg DIPG 17:</strong> -3.9%</div>
+                </div>
+                <a href="Antibiotic_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    GABA Receptor
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 15</div>
+                    <div><strong>Best Inhibitor:</strong> PF-06372865</div>
+                    <div><strong>Best Score:</strong> 59.82%</div>
+                    <div><strong>Worst Performer:</strong> Etomidate (hydrochloride)</div>
+                    <div><strong>Avg DIPG 4:</strong> -4.2%</div>
+                    <div><strong>Avg DIPG 17:</strong> -1.1%</div>
+                </div>
+                <a href="GABA_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    nAChR
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 12</div>
+                    <div><strong>Best Inhibitor:</strong> Pancuronium (dibromide)</div>
+                    <div><strong>Best Score:</strong> 51.09%</div>
+                    <div><strong>Worst Performer:</strong> Rocuronium (Bromide)</div>
+                    <div><strong>Avg DIPG 4:</strong> -4.2%</div>
+                    <div><strong>Avg DIPG 17:</strong> -4.0%</div>
+                </div>
+                <a href="nAChR_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    5-HT Receptor
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 68</div>
+                    <div><strong>Best Inhibitor:</strong> Perphenazine</div>
+                    <div><strong>Best Score:</strong> 90.38%</div>
+                    <div><strong>Worst Performer:</strong> Ro60-0175</div>
+                    <div><strong>Avg DIPG 4:</strong> -6.4%</div>
+                    <div><strong>Avg DIPG 17:</strong> -2.1%</div>
+                </div>
+                <a href="5_HT_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Cholinesterase (ChE)
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 14</div>
+                    <div><strong>Best Inhibitor:</strong> Pralidoxime (iodide)</div>
+                    <div><strong>Best Score:</strong> 10.76%</div>
+                    <div><strong>Worst Performer:</strong> AChE/BChE-IN-10</div>
+                    <div><strong>Avg DIPG 4:</strong> -7.0%</div>
+                    <div><strong>Avg DIPG 17:</strong> -2.5%</div>
+                </div>
+                <a href="Cholinesterase_ChE_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    COX
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 20</div>
+                    <div><strong>Best Inhibitor:</strong> Rofecoxib</div>
+                    <div><strong>Best Score:</strong> 26.88%</div>
+                    <div><strong>Worst Performer:</strong> Celecoxib</div>
+                    <div><strong>Avg DIPG 4:</strong> -10.0%</div>
+                    <div><strong>Avg DIPG 17:</strong> -5.9%</div>
+                </div>
+                <a href="COX_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    mAChR
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 30</div>
+                    <div><strong>Best Inhibitor:</strong> VU0119498</div>
+                    <div><strong>Best Score:</strong> 74.12%</div>
+                    <div><strong>Worst Performer:</strong> Deschloroclozapine</div>
+                    <div><strong>Avg DIPG 4:</strong> -8.6%</div>
+                    <div><strong>Avg DIPG 17:</strong> -7.7%</div>
+                </div>
+                <a href="mAChR_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Histamine Receptor
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 8</div>
+                    <div><strong>Best Inhibitor:</strong> INCB38579</div>
+                    <div><strong>Best Score:</strong> 5.50%</div>
+                    <div><strong>Worst Performer:</strong> Bavisant (dihydrochloride hydrate)</div>
+                    <div><strong>Avg DIPG 4:</strong> -11.5%</div>
+                    <div><strong>Avg DIPG 17:</strong> -7.0%</div>
+                </div>
+                <a href="Histamine_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Calcium Channel
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 11</div>
+                    <div><strong>Best Inhibitor:</strong> Acetylcholine (chloride)</div>
+                    <div><strong>Best Score:</strong> 14.61%</div>
+                    <div><strong>Worst Performer:</strong> (2R/S)-6-PNG</div>
+                    <div><strong>Avg DIPG 4:</strong> -10.5%</div>
+                    <div><strong>Avg DIPG 17:</strong> -9.5%</div>
+                </div>
+                <a href="Calcium_Channel_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Adrenergic Receptor
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 8</div>
+                    <div><strong>Best Inhibitor:</strong> Droxidopa</div>
+                    <div><strong>Best Score:</strong> 22.10%</div>
+                    <div><strong>Worst Performer:</strong> Propranolol (hydrochloride)</div>
+                    <div><strong>Avg DIPG 4:</strong> -9.4%</div>
+                    <div><strong>Avg DIPG 17:</strong> -20.9%</div>
+                </div>
+                <a href="Adrenergic_Receptor_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-title">
+                    Beta-secretase
+                    <span class="stats-highlight">Poor</span>
+                </div>
+                <div class="stats">
+                    <div><strong>Total Drugs:</strong> 8</div>
+                    <div><strong>Best Inhibitor:</strong> LY2886721</div>
+                    <div><strong>Best Score:</strong> 15.29%</div>
+                    <div><strong>Worst Performer:</strong> NB-360</div>
+                    <div><strong>Avg DIPG 4:</strong> -19.6%</div>
+                    <div><strong>Avg DIPG 17:</strong> -11.3%</div>
+                </div>
+                <a href="Beta_secretase_heatmap.html" class="btn">Explore Heatmap</a>
+            </div>
+            
+            </div>
+            
+            <div class="footer">
+                <p>Generated from DIPG drug screening data | Higher values = More effective (more cells killed)</p>
+                <p><strong>Categories Analyzed:</strong> 20 | <strong>Interactive Visualizations Created</strong></p>
+                <p>Data-driven insights for DIPG therapeutic discovery</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    
